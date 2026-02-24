@@ -1,6 +1,7 @@
 #include "dialogue.hpp"
 
 #include <algorithm>
+#include <fstream>
 #include <iostream>
 
 
@@ -21,6 +22,8 @@ std::string dialogue::input_selection() {
         if (std::cin.fail()) {
             std::cin.clear();
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            if (std::cin.eof())
+                return "exit";
             std::cout << "Unknown command\n\n";
             continue;
         }
@@ -104,12 +107,28 @@ void dialogue::file_input() {
 }
 
 void dialogue::show_info() {
-    std::cout << "\tCurrent state: " << recognizer_->get_parser_state() << std::endl;
+    std::string choice;
+    std::cout << "terminal/file: ";
+    std::getline(std::cin, choice);
+    std::ofstream file;
+    if (choice == "f" || choice == "file") {
+        std::string filename;
+        std::cout << "Enter file name: ";
+        std::getline(std::cin, filename);
+        file.open(filename);
+        if (!file.is_open())
+            std::cerr << "Error opening file " << filename << std::endl;
+    }
+    std::ostream& out = file.is_open() ? static_cast<std::ostream&>(file) : std::cout;
+
+    out << "\tCurrent state: " << recognizer_->get_parser_state() << std::endl;
     auto res_map = recognizer_->get_parser_info();
     std::ranges::for_each(res_map, [&](auto& iter) {
-        std::cout << "\t\t" << iter.first << ": ";
+        out << "\t\t" << iter.first << ": ";
         for (auto& att : iter.second)
-            std::cout << att << " ";
-        std::cout << std::endl;
+            out << att << " ";
+        out << std::endl;
     });
 }
+
+

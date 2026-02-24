@@ -1,4 +1,5 @@
 #pragma once
+#include <iostream>
 #include <memory>
 
 #include "i_recognizer.hpp"

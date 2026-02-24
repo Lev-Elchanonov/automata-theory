@@ -47,7 +47,6 @@ bool regex_version::create_new_expression(const std::string& str) {
 }
 
 
-
 bool regex_version::combine_expressions(const std::string& str) {
     std::smatch matches;
     std::string name_pattern = "[a-zA-Z_.,][a-zA-Z0-9_.,]*";
