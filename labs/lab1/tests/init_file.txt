@@ -1,6 +1,6 @@
 create deracel (wfed, d, werf, g)
         create somth (ef1,)
-        create abs123 (a,1,2,3,4)
+        create abs123 (a,a1,a2,a3,b4b)
         create n (a, d1, t, d2, wf, r2, f2, f2, a, b, c, d, e_, q, t, e)
         create n_o_1 (a)
         create ollolo (     a,       r,      q,      t,)

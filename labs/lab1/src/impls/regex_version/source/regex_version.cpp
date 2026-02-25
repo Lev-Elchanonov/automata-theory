@@ -5,11 +5,14 @@
 
 bool regex_version::create_new_expression(const std::string& str) {
     std::smatch matches;
-    std::string name_attr_pattern = "[a-zA-Z_.,][a-zA-Z0-9_.,]*";
+    std::string name_attr_pattern = "[a-zA-Z_.][a-zA-Z0-9_.]*";
     std::regex attribute_list_regex("\\s*(create\\s+)"
                                         "(" + name_attr_pattern + ")"
-                                        "(\\s+)"
-                                        "(\\(\\s*" + "(" + name_attr_pattern + "\\s*)+" + "\\))"
+                                        "(\\s*)"
+                                        "(\\(\\s*)"
+                                        "(" + name_attr_pattern + ")"
+                                        "((\\s*,\\s*" + name_attr_pattern + ")*)"
+                                        "(\\))"
                                         "$"
                                         );
 
@@ -18,25 +21,20 @@ bool regex_version::create_new_expression(const std::string& str) {
         std::vector<std::string> final_attributes;
         std::regex single_attribute_regex(name_attr_pattern);
         std::string name = matches[2];
-        std::string attribs = matches[4];
-
+        final_attributes.push_back(matches[5]);
+        std::string attribs = matches[6];
         auto w_begin = std::sregex_iterator(attribs.begin(), attribs.end(), single_attribute_regex);
         auto w_end = std::sregex_iterator(); // по умолчанию в конце
 
         for (std::sregex_iterator i = w_begin; i != w_end; ++i) {
             std::string token = i->str();
 
-            auto iter = i;
-            if (++iter != w_end && !token.empty()) {
-                if (token.back() == ',') {
-                    token.pop_back();
-                }
-                else {
-                    parser_.set_condition(false);
-                    return false;
-                }
+            token.erase(0, token.find_first_not_of(" "));
+            token.erase((token.find_last_not_of(" ") + 1));
+            if (token.empty()) {
+                parser_.set_condition(false);
+                return false;
             }
-
             final_attributes.push_back(token);
         }
         bool res = parser_.add_expression(name, final_attributes);
@@ -49,7 +47,7 @@ bool regex_version::create_new_expression(const std::string& str) {
 
 bool regex_version::combine_expressions(const std::string& str) {
     std::smatch matches;
-    std::string name_pattern = "[a-zA-Z_.,][a-zA-Z0-9_.,]*";
+    std::string name_pattern = "[a-zA-Z_.][a-zA-Z0-9_.]*";
     std::regex combine_regex("\\s*(create\\s+)"
                                 "(" + name_pattern + ")"
                                 "(\\s+)"

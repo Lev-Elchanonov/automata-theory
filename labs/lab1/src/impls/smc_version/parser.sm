@@ -1,0 +1,158 @@
+%class smc_version : public i_recognizer
+%fsmformat 2
+
+%import std::string
+%import char
+
+//%context RelationParser::ParserContext
+//%access public
+//пока не понимаю эти строчки. Позже разбирусь
+
+%start smc_parser::Skip_start_spaces
+
+Skip_start_spaces
+{
+    next_char(char c)
+    {
+        if (c == ' ')
+        {
+            Transition Skip_start_spaces;
+        }
+        else if (c == 'c')
+        {
+            Action start_create_accum(c);
+            Transition Expect_create;
+        }
+        else
+        {
+            Action set_error("Command must start with 'c' or spaces");
+            Transition Failure;
+        }
+    }
+}
+
+
+
+
+Expect_create // ожидаем create
+{
+    next_char(char c) // событие
+    {
+        if (ctxt.is_accumulating_create()) // тут собираем слово create по буквам
+        {
+            Action accumulate_create(c);
+            if (ctxt.create_is_accumulated())
+            {
+                Transition Expect_1_space_aft_create;
+            }
+            else if (ctxt.create_mismatch()){
+                Action set_error("Expected 'create'");
+                Transition Failure;
+            }
+            else
+            {
+                Transition Expect_create; // продолжаем дальше собирать create
+            }
+        }
+    }
+}
+
+
+Expect_1_space_aft_create
+{
+    next_char(char c)
+    {
+        if (c == ' ')
+        {
+            Transition Skip_remaining_spaces_aft_create; // пропускаем остальные пробелы после create
+        }
+        else
+        {
+            Action set_error("Expected at least 1 space after 'create'");
+            Transition Failure;
+        }
+    }
+}
+
+
+Scip_remaining_spaces_aft_create
+{
+    next_char(char c)
+    {
+        if (c == ' ')
+        {
+            Transition Skip_remaining_spaces;
+        }
+        else
+        {
+            Action ctxt.save_next_char(c); //сохраняем символ для послед. обработки
+            Transition Expect_expression_name;
+        }
+    }
+}
+
+Expect_expression_name
+{
+    next_char(char c) // тут возможно ошибка, так как нам надо просмотреть предыдущий символ
+    {
+        if (!ctxt.name_started())
+        {
+            if (isalpha(c) || c == '_' || c == '.')
+            {
+                Action start_name(c);
+                Transition Expect_expression_name;
+            }
+            else
+            {
+                Action set_error("Unknown symbol to start name");
+                Transition Failure;
+            }
+        }
+        else // если первый символ подошел, смотрим имя дальше
+        {
+            if (isaldigit(c) || c == '_' || c == '.')
+            {
+                Action add_to_name(c);
+                Transition Expect_expression_name;
+            }
+            else
+            {
+                Action save_name();
+                if (c == ' ')
+                {
+                    Transition Expect_space_aft_name;
+                }
+                else if (c == '(')
+                {
+                    Transition Expect_attribute; // тут идет переход к аттрибутам
+                }
+                else
+                {
+                    Action set_error("Expected space or '(' after name");
+                    Transition Failure;
+                }
+            }
+        }
+
+    }
+}
+
+Expect_space_aft_name
+{
+    next_char(char c)
+    {
+        if (c == ' ')
+        {
+            Transition Expect_space_after_name;
+        }
+        else if (c == '(')
+        {
+            Transition Expect_attribute;
+        }
+        else
+        {
+            Action set_error("Expected spaces or '('");
+        }
+    }
+}
+

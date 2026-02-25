@@ -115,18 +115,15 @@ INSTANTIATE_TEST_SUITE_P(
     parser_valid_test,
     ::testing::Values(
         "create deracel (wfed, d, werf, g)",
-        "create somth (ef1,)",
-        "create abs123 (a,1,2,3,4)",
+        "create abs123 (a,a1,a2,a3,b4b)",
         "create n (a, d1, t, d2, wf, r2, f2, f2, a, b, c, d, e_, q, t, e)",
         "create n_o_1 (a)",
-        "create ollolo (     a,       r,      q,      t,)",
         "create hallo         (a,b,                   r,d,        q)",
         "create              tutut (a,b,c,sd,      e,   q,  t_)",
         "create                       totot                   (a,            e,               t,          q)",
-        "create r_r (a,b,c,d,e,a,e,)",
-        "create ,, (a)",
         "create __ (__, ___, _____)",
-        "      create     a     (r,    tr)"
+        "      create     a     (r,    tr)",
+        "create abc(a)"
     )
 );
 
@@ -148,6 +145,8 @@ INSTANTIATE_TEST_SUITE_P(
         "create wde! (a)",
         "create wfe# (fwfe)",
         "create ewf$ (a)",
+        "create ,, (a)",
+        "create somth (ef1,)",
         "create wfe% (A)",
         "create ewf; (a)",
         "create erg: (a)",
@@ -160,12 +159,13 @@ INSTANTIATE_TEST_SUITE_P(
         "create a/efw (a)",
         "create abs[ (a)",
         "create [a (a)",
+        "create ollolo (     a,       r,      q,      t,)",
+        "create r_r (a,b,c,d,e,a,e,)",
         "create [ (a)",
         "create a] (a)",
         "create pwew{ (a)",
         "create wefw} (a)",
         "create wfef { (a)",
-        "create abc(a)",
         "createabs (a)",
         "create abs (1a)",
         "create abs (a\"e)",
@@ -227,19 +227,15 @@ TEST_F(parser_test, file_parsing) {
     file_parser->file_parser("../init_file.txt");
     std::vector<std::pair<std::string, std::vector<std::string>>> correct_expressions = {
         {"deracel", {"wfed", "d", "werf", "g"}},
-        {"somth", {"ef1,"}},
-        {"abs123", {"a,1,2,3,4"}},
-
+        {"abs123", {"a", "a1", "a2", "a3", "b4b"}},
         {"n", {"a", "d1", "t", "d2", "wf", "r2", "f2", "f2", "a", "b", "c", "d", "e_", "q", "t", "e"}},
         {"n_o_1", {"a"}},
-        {"ollolo", {"a", "r", "q", "t,"}},
-        {"hallo", {"a,b", "r,d", "q"}},
-        {"tutut", {"a,b,c,sd", "e", "q", "t_"}},
+        {"hallo", {"a", "b","r", "d","q"}},
+        {"tutut", {"a", "b", "c", "sd", "e", "q", "t_"}},
         {"totot", {"a", "e", "t", "q"}},
-        {"r_r", {"a,b,c,d,e,a,e,"}},
-        {",,", {"a"}},
         {"__", {"__", "___", "_____"}},
         {"a", {"r", "tr"}},
+        {"abc", {"a"}},
         {"exp1", {"a1", "a2", "a3", "a4"}},
         {"exp2", {"b1", "b2", "b3", "b4"}},
         {"exp3", {"a", "b", "c", "d"}},
@@ -260,7 +256,6 @@ TEST_F(parser_test, file_parsing) {
         auto iter = file_parser->get_parser_info().find(correct_expressions[i].first);
         EXPECT_NE(iter, file_parser->get_parser_info().end());
         auto attributes = iter->second;
-        std::cout << std::endl;
         check_attributes_correction(correct_expressions[i].second, attributes);
     }
 }
