@@ -11,7 +11,7 @@
 
 #define SMC_USES_IOSTREAMS
 
-#include "statemap.h"
+#include <statemap.h>
 
 namespace smc_version
 {

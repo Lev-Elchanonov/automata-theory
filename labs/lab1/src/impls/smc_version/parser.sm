@@ -29,7 +29,6 @@ Skip_start_spaces
         }
 
     next_char(c: char)
-    [else]
         Failure
         {
             set_error(Command_must_start_with_c_or_spaces);
@@ -71,7 +70,6 @@ Expect_1_space_aft_create
         {}
 
     next_char(c: char)
-    [else]
         Failure
         {
             set_error(Expected_at_least_1_space_after_create);
@@ -88,7 +86,6 @@ Skip_remaining_spaces_aft_create
         {}
 
     next_char(c: char)
-    [else]
         Expect_expression_name
         {
             ctxt.save_next_char(c);
@@ -133,7 +130,6 @@ Expect_expression_name
             {}
 
     next_char(c: char)
-    [else]
         Failure
         {
             set_error(Expected_space_or_skobka_after_name);
@@ -157,12 +153,11 @@ Expect_space_aft_name
         {}
 
     next_char(c: char)
-    [с == "a"]
+    [c == "a"]
         Expect_as
         {}
 
     next_char(c: char)
-    [else]
         Failure
         {
             set_error(Expected_spaces_or_skobka_or_as);
@@ -194,7 +189,6 @@ Expect_attribute
         }
 
     next_char(c: char)
-    [else]
         Failure
         {
             set_error(Unknown_symbol);
@@ -235,7 +229,6 @@ In_attribute
         }
 
     next_char(c: char)
-    [else]
         Failure
         {
             set_error(Attribute_is_incorrent);
@@ -263,7 +256,6 @@ After_attribute
         {}
 
     next_char(c: char)
-    [else]
         Failure
         {
             set_error(Unexpected_symbol_after_attribute);
@@ -288,7 +280,6 @@ Expect_end
         }
 
     next_char(c: char)
-    [else]
         Failure
         {
             set_error(Unknown_symbols_after_attribute);
@@ -297,11 +288,6 @@ Expect_end
 
 Failure
 {
-
-    next_char(c: char)
-        Failure
-        {}
-
     next_char(c: char)
     [ctxt.is_end_of_line(c)]
         Skip_start_spaces
@@ -309,6 +295,10 @@ Failure
             report_failure();
             reset_for_new_line();
         }
+
+    next_char(c: char)
+        Failure
+        {}
 
     reset()
         Skip_start_spaces
@@ -328,7 +318,6 @@ Success
         }
 
     next_char(c: char)
-    [else]
         Failure
         {
             set_error(ERR_UNEXPECTED_AFTER_SUCCESS);

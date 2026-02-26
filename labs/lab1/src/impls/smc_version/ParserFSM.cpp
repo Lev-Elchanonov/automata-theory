@@ -10,7 +10,8 @@
 
 
 #include "ParserFSM.h"
-#include "ParserFSM.h"
+
+#include "statemap.h"
 
 using namespace statemap;
 using namespace std::string;
@@ -79,9 +80,8 @@ namespace smc_version
             }
             context.getState().Entry(context);
         }
-        else if (else)
-    
-    {
+        else
+        {
             context.getState().Exit(context);
             context.clearState();
             try
@@ -95,9 +95,6 @@ namespace smc_version
                 throw;
             }
             context.getState().Entry(context);
-        }        else
-        {
-             ParserFSM_Default::next_char(context, c);
         }
 
     }
@@ -164,9 +161,8 @@ namespace smc_version
             context.setState(ParserFSM::Skip_remaining_spaces_aft_create);
             context.getState().Entry(context);
         }
-        else if (else)
-    
-    {
+        else
+        {
             context.getState().Exit(context);
             context.clearState();
             try
@@ -180,9 +176,6 @@ namespace smc_version
                 throw;
             }
             context.getState().Entry(context);
-        }        else
-        {
-             ParserFSM_Default::next_char(context, c);
         }
 
     }
@@ -198,9 +191,8 @@ namespace smc_version
             context.setState(ParserFSM::Skip_remaining_spaces_aft_create);
             context.getState().Entry(context);
         }
-        else if (else)
-    
-    {
+        else
+        {
             context.getState().Exit(context);
             context.clearState();
             try
@@ -214,9 +206,6 @@ namespace smc_version
                 throw;
             }
             context.getState().Entry(context);
-        }        else
-        {
-             ParserFSM_Default::next_char(context, c);
         }
 
     }
@@ -291,9 +280,8 @@ namespace smc_version
             context.setState(ParserFSM::Expect_attribute);
             context.getState().Entry(context);
         }
-        else if (else)
-    
-    {
+        else
+        {
             context.getState().Exit(context);
             context.clearState();
             try
@@ -307,9 +295,6 @@ namespace smc_version
                 throw;
             }
             context.getState().Entry(context);
-        }        else
-        {
-             ParserFSM_Default::next_char(context, c);
         }
 
     }
@@ -333,7 +318,7 @@ namespace smc_version
             context.setState(ParserFSM::Expect_attribute);
             context.getState().Entry(context);
         }
-        else if (Ñ == "a")
+        else if (c == "a")
     
     {
             context.getState().Exit(context);
@@ -341,9 +326,8 @@ namespace smc_version
             context.setState(ParserFSM::Expect_as);
             context.getState().Entry(context);
         }
-        else if (else)
-    
-    {
+        else
+        {
             context.getState().Exit(context);
             context.clearState();
             try
@@ -357,9 +341,6 @@ namespace smc_version
                 throw;
             }
             context.getState().Entry(context);
-        }        else
-        {
-             ParserFSM_Default::next_char(context, c);
         }
 
     }
@@ -409,9 +390,8 @@ namespace smc_version
             }
             context.getState().Entry(context);
         }
-        else if (else)
-    
-    {
+        else
+        {
             context.getState().Exit(context);
             context.clearState();
             try
@@ -425,9 +405,6 @@ namespace smc_version
                 throw;
             }
             context.getState().Entry(context);
-        }        else
-        {
-             ParserFSM_Default::next_char(context, c);
         }
 
     }
@@ -503,9 +480,8 @@ namespace smc_version
             }
             context.getState().Entry(context);
         }
-        else if (else)
-    
-    {
+        else
+        {
             context.getState().Exit(context);
             context.clearState();
             try
@@ -519,9 +495,6 @@ namespace smc_version
                 throw;
             }
             context.getState().Entry(context);
-        }        else
-        {
-             ParserFSM_Default::next_char(context, c);
         }
 
     }
@@ -553,9 +526,8 @@ namespace smc_version
             context.setState(ParserFSM::Expect_end);
             context.getState().Entry(context);
         }
-        else if (else)
-    
-    {
+        else
+        {
             context.getState().Exit(context);
             context.clearState();
             try
@@ -569,9 +541,6 @@ namespace smc_version
                 throw;
             }
             context.getState().Entry(context);
-        }        else
-        {
-             ParserFSM_Default::next_char(context, c);
         }
 
     }
@@ -604,9 +573,8 @@ namespace smc_version
             }
             context.getState().Entry(context);
         }
-        else if (else)
-    
-    {
+        else
+        {
             context.getState().Exit(context);
             context.clearState();
             try
@@ -620,9 +588,6 @@ namespace smc_version
                 throw;
             }
             context.getState().Entry(context);
-        }        else
-        {
-             ParserFSM_Default::next_char(context, c);
         }
 
     }
@@ -631,16 +596,8 @@ namespace smc_version
     {
         ParserContext& ctxt = context.getOwner();
 
-
-        else
+        if (ctxt.is_end_of_line(c))
         {
-            context.getState().Exit(context);
-            context.setState(ParserFSM::Failure);
-            context.getState().Entry(context);
-        }
-        else if (ctxt.is_end_of_line(c))
-    
-    {
             context.getState().Exit(context);
             context.clearState();
             try
@@ -654,6 +611,12 @@ namespace smc_version
                 context.setState(ParserFSM::Skip_start_spaces);
                 throw;
             }
+            context.getState().Entry(context);
+        }
+        else
+        {
+            context.getState().Exit(context);
+            context.setState(ParserFSM::Failure);
             context.getState().Entry(context);
         }
 
@@ -690,9 +653,8 @@ namespace smc_version
             context.setState(ParserFSM::Skip_start_spaces);
             context.getState().Entry(context);
         }
-        else if (else)
-    
-    {
+        else
+        {
             context.getState().Exit(context);
             context.clearState();
             try
@@ -706,9 +668,6 @@ namespace smc_version
                 throw;
             }
             context.getState().Entry(context);
-        }        else
-        {
-             ParserFSM_Default::next_char(context, c);
         }
 
     }
