@@ -84,9 +84,9 @@ bool service::combine_expressions(const std::string& expression_1, const std::st
 
 void service::get_line(const std::string& line) {
     auto result = lexer_.lexline(line);
-    if (result.first == NEW_EXP)
+    if (result.first == STATE::NEW_EXP)
         state_ = add_expression(result.second.first, result.second.second);
-    else if (result.first == COMBINE_EXP)
+    else if (result.first == STATE::COMBINE_EXP)
         state_ = combine_expressions(result.second.second[0], result.second.second[1], result.second.first);
     else
         state_ = false;

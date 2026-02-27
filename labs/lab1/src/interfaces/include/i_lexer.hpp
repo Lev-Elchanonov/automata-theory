@@ -3,7 +3,7 @@
 #include <vector>
 
 
-enum STATE {
+enum class STATE {
     NO,
     NEW_EXP,
     COMBINE_EXP

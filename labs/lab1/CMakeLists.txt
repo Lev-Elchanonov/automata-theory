@@ -7,6 +7,9 @@ project(lab1)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+option(USE_SMC "Use SMC implementation for parser" OFF)
+
+
 add_subdirectory(src/interfaces)
 add_subdirectory(src/impls)
 add_subdirectory(src/service)

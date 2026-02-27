@@ -2,27 +2,26 @@
 // SMC parser for relation expressions
 %}
 
-%class ParserContext // мой класс, надо реализовать методы
-%package smc_version
-%header ParserFSM.h
-%fsmclass ParserFSM // главный класс автомата
-%start ParserFSM::Skip_start_spaces
 
-%import std::string
+%start LexerFSM::Skip_start_spaces
+%class lexer_context // главный класс автомата
+%header lexer_context.h
+
+%{#include <string>%}
 
 
-%map ParserFSM
+%map LexerFSM
 %%
 
 Skip_start_spaces
 {
     next_char(c: char)
-    [c == " "]
+    [c == ' ']
         Skip_start_spaces
         {}
 
     next_char(c: char)
-    [c == "c"]
+    [c == 'c']
         Expect_create
         {
             start_create_accum(c);
@@ -31,7 +30,7 @@ Skip_start_spaces
     next_char(c: char)
         Failure
         {
-            set_error(Command_must_start_with_c_or_spaces);
+            set_state(STATE::NO);
         }
 }
 
@@ -41,15 +40,15 @@ Skip_start_spaces
 Expect_create // ожидаем create
 {
     next_char(c: char) // событие
-    [ctxt.is_accumulating_create() and ctxt.create_is_accumulated()]
-        Expect_1_space_aft_create
+    [ctxt.is_accumulating_create() and ctxt.create_is_accumulated() and c == ' ']
+        Expect_expression_name
         {}
 
     next_char(c: char)
     [ctxt.is_accumulating_create() and ctxt.create_mismatch()]
         Failure
         {
-            set_error(Expected_create);
+            set_state(STATE::NO);
         }
 
     next_char(c: char)
@@ -62,35 +61,8 @@ Expect_create // ожидаем create
 }
 
 
-Expect_1_space_aft_create
-{
-    next_char(c: char)
-    [c == " "]
-        Skip_remaining_spaces_aft_create
-        {}
-
-    next_char(c: char)
-        Failure
-        {
-            set_error(Expected_at_least_1_space_after_create);
-        }
-}
 
 
-
-Skip_remaining_spaces_aft_create
-{
-    next_char(c: char)
-    [c == " "]
-        Skip_remaining_spaces_aft_create
-        {}
-
-    next_char(c: char)
-        Expect_expression_name
-        {
-            ctxt.save_next_char(c);
-        }
-}
 
 
 
@@ -99,70 +71,67 @@ Skip_remaining_spaces_aft_create
 Expect_expression_name
 {
     next_char(c: char)
-    [ctxt.name_started() == false and (ctxt.isalpha(c) or c == "_" or c == ".")]
+    [ctxt.name_started() == false and c == ' ']
+        Expect_expression_name
+        {}
+
+    next_char(c: char)
+    [ctxt.name_started() == false and (ctxt.isalpha(c) or c == '_' or c == '.')]
         Expect_expression_name
         {
-            start_name(c);
+           add_to_name(c);
         }
 
     next_char(c: char)
     [ctxt.name_started() == false]
         Failure
         {
-            set_error(Unknown_symbol_to_start_name);
+            set_state(STATE::NO);
         }
 
     next_char(c: char)
-    [ctxt.name_started() == true and (ctxt.isalnum(c) or c == "_" or c == ".")]
+    [ctxt.name_started() == true and (ctxt.isalnum(c) or c == '_' or c == '.')]
         Expect_expression_name
         {
             add_to_name(c);
         }
 
     next_char(c: char)
-    [ctxt.name_started() == true and ctxt.is_space(c)]
-        Expect_space_aft_name
+    [ctxt.name_started() == true and c == ' ']
+        Expect_open_skobka
         {}
 
     next_char(c: char)
-    [ctxt.name_started() == true and c == "("]
+    [ctxt.name_started() == true and c == '(']
             Expect_attribute
             {}
 
     next_char(c: char)
         Failure
         {
-            set_error(Expected_space_or_skobka_after_name);
+            set_state(STATE::NO);
         }
 }
 
 
 
-
-
-Expect_space_aft_name
+Expect_open_skobka
 {
     next_char(c: char)
-    [c == " "]
-        Expect_space_aft_name
+    [c == ' ']
+        Expect_open_skobka
         {}
 
     next_char(c: char)
-    [c == "("]
+    [c == '(']
         Expect_attribute
-        {}
-
-    next_char(c: char)
-    [c == "a"]
-        Expect_as
         {}
 
     next_char(c: char)
         Failure
         {
-            set_error(Expected_spaces_or_skobka_or_as);
+            set_state(STATE::NO);
         }
-
 }
 
 
@@ -170,12 +139,12 @@ Expect_space_aft_name
 Expect_attribute
 {
     next_char(c: char)
-    [c == " "]
+    [c == ' ']
         Expect_attribute
         {}
 
     next_char(c: char)
-    [ctxt.attribute_started() == false and (ctxt.isalpha(c) or c == "_" or c == ".")]
+    [ctxt.attribute_started() == false and (ctxt.isalpha(c) or c == '_' or c == '.')]
         In_attribute
         {
             start_attribute(c);
@@ -185,13 +154,13 @@ Expect_attribute
     [ctxt.attribute_started() == false]
         Failure
         {
-            set_error(Unknown_symbol);
+            set_state(STATE::NO);
         }
 
     next_char(c: char)
         Failure
         {
-            set_error(Unknown_symbol);
+            set_state(STATE::NO);
         }
 }
 
@@ -201,28 +170,28 @@ Expect_attribute
 In_attribute
 {
     next_char(c: char)
-    [ctxt.isalnum(c) or c == "_" or c == "."]
+    [ctxt.isalnum(c) or c == '_' or c == '.']
         In_attribute
         {
             add_to_attribute(c);
         }
 
     next_char(c: char)
-    [c == ","]
+    [c == ',']
         Expect_attribute
         {
             save_attribute(c);
         }
 
     next_char(c: char)
-    [c == ")"]
+    [c == ')']
         Expect_end
         {
             save_attribute(c);
         }
 
     next_char(c: char)
-    [c == " "]
+    [c == ' ']
         After_attribute
         {
             save_attribute();
@@ -231,7 +200,7 @@ In_attribute
     next_char(c: char)
         Failure
         {
-            set_error(Attribute_is_incorrent);
+            set_state(STATE::NO);
         }
 }
 
@@ -241,24 +210,24 @@ In_attribute
 After_attribute
 {
     next_char(c: char)
-    [c == " "]
+    [c == ' ']
         After_attribute
         {}
 
     next_char(c: char)
-    [c == ","]
+    [c == ',']
         Expect_attribute
         {}
 
     next_char(c: char)
-    [c == ")"]
+    [c == ')']
         Expect_end
         {}
 
     next_char(c: char)
         Failure
         {
-            set_error(Unexpected_symbol_after_attribute);
+            set_state(STATE::NO);
         }
 
 }
@@ -268,7 +237,7 @@ After_attribute
 Expect_end
 {
     next_char(c: char)
-    [c == " "]
+    [c == ' ']
         Expect_end
         {}
 
@@ -282,7 +251,7 @@ Expect_end
     next_char(c: char)
         Failure
         {
-            set_error(Unknown_symbols_after_attribute);
+            set_state(STATE::NO);
         }
 }
 
@@ -303,7 +272,7 @@ Failure
     reset()
         Skip_start_spaces
         {
-            reset_error();
+            reset_state();
         }
 }
 
@@ -320,7 +289,7 @@ Success
     next_char(c: char)
         Failure
         {
-            set_error(ERR_UNEXPECTED_AFTER_SUCCESS);
+            set_state(STATE::NO);
         }
 
     reset()
@@ -331,12 +300,12 @@ Success
 }
 
 
-Expect_as
-{
-    // Накопление "as"
-    next_char(c: char)
-    [ctxt.is_accumulating_as() and ctxt.as_is_accumulated()]
-        Failure
-        {}
-}
+//Expect_as
+//{
+    // Накопление 'as'
+    //next_char(c: char)
+    //[ctxt.is_accumulating_as() and ctxt.as_is_accumulated()]
+        //Failure
+        //{}
+//}
 %%

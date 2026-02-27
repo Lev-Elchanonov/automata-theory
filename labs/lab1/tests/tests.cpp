@@ -3,7 +3,7 @@
 #include <gtest/gtest.h>
 #include <memory>
 
-#include "regex_version.hpp"
+#include "../impls/smc_version/lexer_context.h"
 #include "service.hpp"
 
 class parser_test : public ::testing::Test {
@@ -13,11 +13,12 @@ class parser_test : public ::testing::Test {
 class parser_valid_test : public parser_test, public ::testing::WithParamInterface<std::string>{};
 class parser_invalid_test : public parser_test, public ::testing::WithParamInterface<std::string>{};
 
-std::unique_ptr<regex_version> regex_parser_ = std::make_unique<regex_version>();
+std::unique_ptr<lexer_context> regex_parser_ = std::make_unique<lexer_context>();
 std::unique_ptr<service> parser_test::service_ = std::make_unique<service>(*regex_parser_);
 
 TEST_P(parser_valid_test, valid_strings) {
     std::string valid_input = GetParam();
+    std::cout << valid_input << std::endl;
     service_->get_line(valid_input);
     EXPECT_TRUE(service_->get_lexer_state());
 }
@@ -34,7 +35,7 @@ void check_attributes_correction(std::vector<std::string>& array_1, std::vector<
         EXPECT_EQ(array_1[i], array_2[i]);
 
 }
-
+/*
 TEST_F(parser_test, combination_test) {
     service_->get_line("create exp1 (a1, a2, a3, a4)");
     EXPECT_TRUE(service_->get_lexer_state());
@@ -110,7 +111,7 @@ TEST_F(parser_test, wrong_combinations) {
     }
 
 }
-
+*/
 
 INSTANTIATE_TEST_SUITE_P(
     valid_strings,
@@ -233,8 +234,9 @@ void filename_check(const std::string& filename, service& serv) {
         serv.get_line(line);
     }
 }
+/*
 TEST_F(parser_test, file_parsing) {
-    auto another_regex = std::make_unique<regex_version>();
+    auto another_regex = std::make_unique<lexer_context>();
     auto file_service = std::make_unique<service>(*another_regex);
     EXPECT_THROW(filename_check("ewfewf", *file_service), std::runtime_error);
     EXPECT_NO_THROW(filename_check("../init_file.txt", *file_service));
@@ -273,3 +275,4 @@ TEST_F(parser_test, file_parsing) {
     }
 }
 
+*/

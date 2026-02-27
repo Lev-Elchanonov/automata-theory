@@ -99,33 +99,29 @@ regex_version::lexline(const std::string& line) {
     std::smatch matches;
     std::string name_attr_pattern = "[a-zA-Z_.][a-zA-Z0-9_.]*";
 
-    // Общее регулярное выражение, которое пытается захватить оба паттерна
     std::regex combined_regex(
         "\\s*create\\s+"
-        "(" + name_attr_pattern + ")"  // имя нового выражения (группа 1)
+        "(" + name_attr_pattern + ")"
         "(?:"
-            "\\s*\\(\\s*"  // вариант с атрибутами (create_new_expression)
-            "(" + name_attr_pattern + ")"  // первый атрибут (группа 2)
-            "((?:\\s*,\\s*" + name_attr_pattern + ")*)"  // остальные атрибуты (группа 3)
+            "\\s*\\(\\s*"
+            "(" + name_attr_pattern + ")"
+            "((?:\\s*,\\s*" + name_attr_pattern + ")*)"
             "\\s*\\)"
             "|"
-            "\\s+as\\s+"  // вариант с объединением (combine_expressions)
-            "(" + name_attr_pattern + ")"  // первое выражение (группа 4)
+            "\\s+as\\s+"
+            "(" + name_attr_pattern + ")"
             "\\s+join\\s+"
-            "(" + name_attr_pattern + ")"  // второе выражение (группа 5)
+            "(" + name_attr_pattern + ")"
         ")"
         "\\s*$"
     );
 
     if (std::regex_search(line, matches, combined_regex)) {
         std::string name = matches[1];
-        // Проверяем, какой вариант сработал
-        if (matches[2].matched) {  // create_new_expression (есть группа с атрибутами)
+        if (matches[2].matched) {
             std::vector<std::string> attributes;
-            // Добавляем первый атрибут
             attributes.push_back(matches[2]);
 
-            // Обрабатываем остальные атрибуты
             if (matches[3].matched) {
                 std::regex single_attribute_regex(name_attr_pattern);
                 std::string attribs = matches[3];
@@ -148,7 +144,7 @@ regex_version::lexline(const std::string& line) {
             }
             return {STATE::NEW_EXP, {name, attributes}};
         }
-        else if (matches[4].matched) {  // combine_expressions (есть группа с as/join)
+        else if (matches[4].matched) {
             std::vector<std::string> expressions;
             expressions.push_back(matches[4]);  // первое выражение
             expressions.push_back(matches[5]);  // второе выражение
