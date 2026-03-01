@@ -123,6 +123,11 @@ Expect_open_skobka
         {}
 
     next_char(c: char)
+    [c == 'a']
+        Expect_as
+        {}
+
+    next_char(c: char)
     [c == '(']
         Expect_attribute
         {}
@@ -180,14 +185,15 @@ In_attribute
     [c == ',']
         Expect_attribute
         {
-            save_attribute(c);
+            save_attribute();
         }
 
     next_char(c: char)
     [c == ')']
         Expect_end
         {
-            save_attribute(c);
+            set_state(STATE::NEW_EXP);
+            save_attribute();
         }
 
     next_char(c: char)
@@ -222,7 +228,9 @@ After_attribute
     next_char(c: char)
     [c == ')']
         Expect_end
-        {}
+        {
+            set_state(STATE::NEW_EXP);
+        }
 
     next_char(c: char)
         Failure
@@ -258,22 +266,11 @@ Expect_end
 Failure
 {
     next_char(c: char)
-    [ctxt.is_end_of_line(c)]
-        Skip_start_spaces
-        {
-            report_failure();
-            reset_for_new_line();
-        }
-
-    next_char(c: char)
-        Failure
-        {}
-
-    reset()
-        Skip_start_spaces
-        {
-            reset_state();
-        }
+    Skip_start_spaces
+    {
+        set_exit_state();
+        reset_for_new_line();
+    }
 }
 
 Success
@@ -295,17 +292,172 @@ Success
     reset()
         Skip_start_spaces
         {
-            reset_state();
+            reset_for_new_line();
         }
 }
 
 
-//Expect_as
-//{
-    // Накопление 'as'
-    //next_char(c: char)
-    //[ctxt.is_accumulating_as() and ctxt.as_is_accumulated()]
-        //Failure
-        //{}
-//}
+Expect_as
+{
+    next_char(c: char)
+    [c == 's']
+        Expect_space_aft_as
+        {}
+
+    next_char(c: char)
+        Failure
+        {
+            set_state(STATE::NO);
+        }
+}
+
+Expect_space_aft_as
+{
+    next_char(c: char)
+    [c == ' ']
+        Expect_exp_1
+        {}
+
+    next_char(c: char)
+        Failure
+        {
+            set_state(STATE::NO);
+        }
+}
+
+Expect_exp_1
+{
+    next_char(c: char)
+    [ctxt.attribute_started() == false and c == ' ']
+        Expect_exp_1
+        {}
+
+    next_char(c: char)
+    [ctxt.attribute_started() == false and (ctxt.isalpha(c) or c == '_' or c == '.')]
+        Expect_exp_1
+        {
+           start_attribute(c);
+        }
+
+    next_char(c: char)
+    [ctxt.attribute_started() == false]
+        Failure
+        {
+            set_state(STATE::NO);
+        }
+
+    next_char(c: char)
+    [ctxt.attribute_started() == true and (ctxt.isalnum(c) or c == '_' or c == '.')]
+        Expect_exp_1
+        {
+            add_to_attribute(c);
+        }
+
+    next_char(c: char)
+    [ctxt.attribute_started() == true and c == ' ']
+        Expect_join
+        {
+            save_attribute();
+        }
+
+
+    next_char(c: char)
+        Failure
+        {
+            set_state(STATE::NO);
+        }
+}
+
+
+
+Expect_join
+{
+    next_char(c: char)
+    [c == ' ' and ctxt.is_accumulating_join() == false]
+        Expect_join
+        {}
+
+    next_char(c: char)
+    [c == 'j' and ctxt.is_accumulating_join() == false]
+        Expect_join
+        {
+            accumulate_join(c);
+        }
+
+    next_char(c: char) // событие
+    [ctxt.is_accumulating_join() and ctxt.join_is_accumulated() and c == ' ']
+        Expect_exp_2
+        {}
+
+    next_char(c: char)
+    [ctxt.is_accumulating_join() and ctxt.join_mismatch()]
+        Failure
+        {
+            set_state(STATE::NO);
+        }
+
+    next_char(c: char)
+    [ctxt.is_accumulating_join()]
+        Expect_join
+        {
+            accumulate_join(c);
+        }
+}
+
+
+
+Expect_exp_2
+{
+    next_char(c: char)
+    [ctxt.attribute_started() == false and c == ' ']
+        Expect_exp_2
+        {}
+
+    next_char(c: char)
+    [ctxt.attribute_started() == false and (ctxt.isalpha(c) or c == '_' or c == '.')]
+        Expect_exp_2
+        {
+            start_attribute(c);
+        }
+
+    next_char(c: char)
+    [ctxt.attribute_started() == false]
+        Failure
+        {
+            set_state(STATE::NO);
+        }
+
+    next_char(c: char)
+    [ctxt.attribute_started() == true and (ctxt.isalnum(c) or c == '_' or c == '.')]
+        Expect_exp_2
+        {
+            add_to_attribute(c);
+        }
+
+    next_char(c: char)
+    [c == ' ']
+        Expect_end
+        {
+            set_state(STATE::COMBINE_EXP);
+            save_attribute();
+        }
+
+    next_char(c: char)
+    [ctxt.is_end_of_line(c)]
+        Success
+        {
+            set_state(STATE::COMBINE_EXP);
+            save_attribute();
+            end_line();
+        }
+
+    next_char(c: char)
+        Failure
+        {
+            set_state(STATE::NO);
+        }
+}
+
+
+
 %%

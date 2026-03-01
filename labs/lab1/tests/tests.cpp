@@ -18,7 +18,7 @@ std::unique_ptr<service> parser_test::service_ = std::make_unique<service>(*rege
 
 TEST_P(parser_valid_test, valid_strings) {
     std::string valid_input = GetParam();
-    std::cout << valid_input << std::endl;
+    //std::cout << valid_input << std::endl;
     service_->get_line(valid_input);
     EXPECT_TRUE(service_->get_lexer_state());
 }
@@ -35,7 +35,7 @@ void check_attributes_correction(std::vector<std::string>& array_1, std::vector<
         EXPECT_EQ(array_1[i], array_2[i]);
 
 }
-/*
+
 TEST_F(parser_test, combination_test) {
     service_->get_line("create exp1 (a1, a2, a3, a4)");
     EXPECT_TRUE(service_->get_lexer_state());
@@ -111,7 +111,7 @@ TEST_F(parser_test, wrong_combinations) {
     }
 
 }
-*/
+
 
 INSTANTIATE_TEST_SUITE_P(
     valid_strings,
@@ -218,7 +218,7 @@ INSTANTIATE_TEST_SUITE_P(
         "create exp5 (a, ert)",
         "create exp6 (abc, a)",
         "create exp7 (abs)",
-        "create exp8 (abc)",
+        "create exp8 (abc)"
         "create exp9 ()"
     )
 );
@@ -234,7 +234,7 @@ void filename_check(const std::string& filename, service& serv) {
         serv.get_line(line);
     }
 }
-/*
+
 TEST_F(parser_test, file_parsing) {
     auto another_regex = std::make_unique<lexer_context>();
     auto file_service = std::make_unique<service>(*another_regex);
@@ -275,4 +275,3 @@ TEST_F(parser_test, file_parsing) {
     }
 }
 
-*/

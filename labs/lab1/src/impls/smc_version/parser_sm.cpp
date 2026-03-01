@@ -25,6 +25,11 @@ LexerFSM_After_attribute LexerFSM::After_attribute("LexerFSM::After_attribute", 
 LexerFSM_Expect_end LexerFSM::Expect_end("LexerFSM::Expect_end", 7);
 LexerFSM_Failure LexerFSM::Failure("LexerFSM::Failure", 8);
 LexerFSM_Success LexerFSM::Success("LexerFSM::Success", 9);
+LexerFSM_Expect_as LexerFSM::Expect_as("LexerFSM::Expect_as", 10);
+LexerFSM_Expect_space_aft_as LexerFSM::Expect_space_aft_as("LexerFSM::Expect_space_aft_as", 11);
+LexerFSM_Expect_exp_1 LexerFSM::Expect_exp_1("LexerFSM::Expect_exp_1", 12);
+LexerFSM_Expect_join LexerFSM::Expect_join("LexerFSM::Expect_join", 13);
+LexerFSM_Expect_exp_2 LexerFSM::Expect_exp_2("LexerFSM::Expect_exp_2", 14);
 
 void lexer_contextState::next_char(parserContext& context, char c)
 {
@@ -251,6 +256,14 @@ void LexerFSM_Expect_open_skobka::next_char(parserContext& context, char c)
         context.setState(LexerFSM::Expect_open_skobka);
         context.getState().Entry(context);
     }
+    else if (c == 'a')
+
+    {
+        context.getState().Exit(context);
+        // No actions.
+        context.setState(LexerFSM::Expect_as);
+        context.getState().Entry(context);
+    }
     else if (c == '(')
 
     {
@@ -369,7 +382,7 @@ void LexerFSM_In_attribute::next_char(parserContext& context, char c)
         context.clearState();
         try
         {
-            ctxt.save_attribute(c);
+            ctxt.save_attribute();
             context.setState(LexerFSM::Expect_attribute);
         }
         catch (...)
@@ -386,7 +399,8 @@ void LexerFSM_In_attribute::next_char(parserContext& context, char c)
         context.clearState();
         try
         {
-            ctxt.save_attribute(c);
+            ctxt.set_state(STATE::NEW_EXP);
+            ctxt.save_attribute();
             context.setState(LexerFSM::Expect_end);
         }
         catch (...)
@@ -455,8 +469,17 @@ void LexerFSM_After_attribute::next_char(parserContext& context, char c)
 
     {
         context.getState().Exit(context);
-        // No actions.
-        context.setState(LexerFSM::Expect_end);
+        context.clearState();
+        try
+        {
+            ctxt.set_state(STATE::NEW_EXP);
+            context.setState(LexerFSM::Expect_end);
+        }
+        catch (...)
+        {
+            context.setState(LexerFSM::Expect_end);
+            throw;
+        }
         context.getState().Entry(context);
     }
     else
@@ -529,41 +552,12 @@ void LexerFSM_Failure::next_char(parserContext& context, char c)
 {
     lexer_context& ctxt = context.getOwner();
 
-    if (ctxt.is_end_of_line(c))
-    {
-        context.getState().Exit(context);
-        context.clearState();
-        try
-        {
-            ctxt.report_failure();
-            ctxt.reset_for_new_line();
-            context.setState(LexerFSM::Skip_start_spaces);
-        }
-        catch (...)
-        {
-            context.setState(LexerFSM::Skip_start_spaces);
-            throw;
-        }
-        context.getState().Entry(context);
-    }
-    else
-    {
-        context.getState().Exit(context);
-        context.setState(LexerFSM::Failure);
-        context.getState().Entry(context);
-    }
-
-}
-
-void LexerFSM_Failure::reset(parserContext& context)
-{
-    lexer_context& ctxt = context.getOwner();
-
     context.getState().Exit(context);
     context.clearState();
     try
     {
-        ctxt.reset_state();
+        ctxt.set_exit_state();
+        ctxt.reset_for_new_line();
         context.setState(LexerFSM::Skip_start_spaces);
     }
     catch (...)
@@ -613,7 +607,7 @@ void LexerFSM_Success::reset(parserContext& context)
     context.clearState();
     try
     {
-        ctxt.reset_state();
+        ctxt.reset_for_new_line();
         context.setState(LexerFSM::Skip_start_spaces);
     }
     catch (...)
@@ -622,6 +616,358 @@ void LexerFSM_Success::reset(parserContext& context)
         throw;
     }
     context.getState().Entry(context);
+
+}
+
+void LexerFSM_Expect_as::next_char(parserContext& context, char c)
+{
+    lexer_context& ctxt = context.getOwner();
+
+    if (c == 's')
+    {
+        context.getState().Exit(context);
+        // No actions.
+        context.setState(LexerFSM::Expect_space_aft_as);
+        context.getState().Entry(context);
+    }
+    else
+    {
+        context.getState().Exit(context);
+        context.clearState();
+        try
+        {
+            ctxt.set_state(STATE::NO);
+            context.setState(LexerFSM::Failure);
+        }
+        catch (...)
+        {
+            context.setState(LexerFSM::Failure);
+            throw;
+        }
+        context.getState().Entry(context);
+    }
+
+}
+
+void LexerFSM_Expect_space_aft_as::next_char(parserContext& context, char c)
+{
+    lexer_context& ctxt = context.getOwner();
+
+    if (c == ' ')
+    {
+        context.getState().Exit(context);
+        // No actions.
+        context.setState(LexerFSM::Expect_exp_1);
+        context.getState().Entry(context);
+    }
+    else
+    {
+        context.getState().Exit(context);
+        context.clearState();
+        try
+        {
+            ctxt.set_state(STATE::NO);
+            context.setState(LexerFSM::Failure);
+        }
+        catch (...)
+        {
+            context.setState(LexerFSM::Failure);
+            throw;
+        }
+        context.getState().Entry(context);
+    }
+
+}
+
+void LexerFSM_Expect_exp_1::next_char(parserContext& context, char c)
+{
+    lexer_context& ctxt = context.getOwner();
+
+    if (ctxt.attribute_started() == false and c == ' ')
+    {
+        context.getState().Exit(context);
+        // No actions.
+        context.setState(LexerFSM::Expect_exp_1);
+        context.getState().Entry(context);
+    }
+    else if (ctxt.attribute_started() == false and (ctxt.isalpha(c) or c == '_' or c == '.'))
+
+    {
+        context.getState().Exit(context);
+        context.clearState();
+        try
+        {
+            ctxt.start_attribute(c);
+            context.setState(LexerFSM::Expect_exp_1);
+        }
+        catch (...)
+        {
+            context.setState(LexerFSM::Expect_exp_1);
+            throw;
+        }
+        context.getState().Entry(context);
+    }
+    else if (ctxt.attribute_started() == false)
+
+    {
+        context.getState().Exit(context);
+        context.clearState();
+        try
+        {
+            ctxt.set_state(STATE::NO);
+            context.setState(LexerFSM::Failure);
+        }
+        catch (...)
+        {
+            context.setState(LexerFSM::Failure);
+            throw;
+        }
+        context.getState().Entry(context);
+    }
+    else if (ctxt.attribute_started() == true and (ctxt.isalnum(c) or c == '_' or c == '.'))
+
+    {
+        context.getState().Exit(context);
+        context.clearState();
+        try
+        {
+            ctxt.add_to_attribute(c);
+            context.setState(LexerFSM::Expect_exp_1);
+        }
+        catch (...)
+        {
+            context.setState(LexerFSM::Expect_exp_1);
+            throw;
+        }
+        context.getState().Entry(context);
+    }
+    else if (ctxt.attribute_started() == true and c == ' ')
+
+    {
+        context.getState().Exit(context);
+        context.clearState();
+        try
+        {
+            ctxt.save_attribute();
+            context.setState(LexerFSM::Expect_join);
+        }
+        catch (...)
+        {
+            context.setState(LexerFSM::Expect_join);
+            throw;
+        }
+        context.getState().Entry(context);
+    }
+    else
+    {
+        context.getState().Exit(context);
+        context.clearState();
+        try
+        {
+            ctxt.set_state(STATE::NO);
+            context.setState(LexerFSM::Failure);
+        }
+        catch (...)
+        {
+            context.setState(LexerFSM::Failure);
+            throw;
+        }
+        context.getState().Entry(context);
+    }
+
+}
+
+void LexerFSM_Expect_join::next_char(parserContext& context, char c)
+{
+    lexer_context& ctxt = context.getOwner();
+
+    if (c == ' ' and ctxt.is_accumulating_join() == false)
+    {
+        context.getState().Exit(context);
+        // No actions.
+        context.setState(LexerFSM::Expect_join);
+        context.getState().Entry(context);
+    }
+    else if (c == 'j' and ctxt.is_accumulating_join() == false)
+
+    {
+        context.getState().Exit(context);
+        context.clearState();
+        try
+        {
+            ctxt.accumulate_join(c);
+            context.setState(LexerFSM::Expect_join);
+        }
+        catch (...)
+        {
+            context.setState(LexerFSM::Expect_join);
+            throw;
+        }
+        context.getState().Entry(context);
+    }
+    else if (ctxt.is_accumulating_join() and ctxt.join_is_accumulated() and c == ' ')
+
+    {
+        context.getState().Exit(context);
+        // No actions.
+        context.setState(LexerFSM::Expect_exp_2);
+        context.getState().Entry(context);
+    }
+    else if (ctxt.is_accumulating_join() and ctxt.join_mismatch())
+
+    {
+        context.getState().Exit(context);
+        context.clearState();
+        try
+        {
+            ctxt.set_state(STATE::NO);
+            context.setState(LexerFSM::Failure);
+        }
+        catch (...)
+        {
+            context.setState(LexerFSM::Failure);
+            throw;
+        }
+        context.getState().Entry(context);
+    }
+    else if (ctxt.is_accumulating_join())
+
+    {
+        context.getState().Exit(context);
+        context.clearState();
+        try
+        {
+            ctxt.accumulate_join(c);
+            context.setState(LexerFSM::Expect_join);
+        }
+        catch (...)
+        {
+            context.setState(LexerFSM::Expect_join);
+            throw;
+        }
+        context.getState().Entry(context);
+    }    else
+    {
+         LexerFSM_Default::next_char(context, c);
+    }
+
+}
+
+void LexerFSM_Expect_exp_2::next_char(parserContext& context, char c)
+{
+    lexer_context& ctxt = context.getOwner();
+
+    if (ctxt.attribute_started() == false and c == ' ')
+    {
+        context.getState().Exit(context);
+        // No actions.
+        context.setState(LexerFSM::Expect_exp_2);
+        context.getState().Entry(context);
+    }
+    else if (ctxt.attribute_started() == false and (ctxt.isalpha(c) or c == '_' or c == '.'))
+
+    {
+        context.getState().Exit(context);
+        context.clearState();
+        try
+        {
+            ctxt.start_attribute(c);
+            context.setState(LexerFSM::Expect_exp_2);
+        }
+        catch (...)
+        {
+            context.setState(LexerFSM::Expect_exp_2);
+            throw;
+        }
+        context.getState().Entry(context);
+    }
+    else if (ctxt.attribute_started() == false)
+
+    {
+        context.getState().Exit(context);
+        context.clearState();
+        try
+        {
+            ctxt.set_state(STATE::NO);
+            context.setState(LexerFSM::Failure);
+        }
+        catch (...)
+        {
+            context.setState(LexerFSM::Failure);
+            throw;
+        }
+        context.getState().Entry(context);
+    }
+    else if (ctxt.attribute_started() == true and (ctxt.isalnum(c) or c == '_' or c == '.'))
+
+    {
+        context.getState().Exit(context);
+        context.clearState();
+        try
+        {
+            ctxt.add_to_attribute(c);
+            context.setState(LexerFSM::Expect_exp_2);
+        }
+        catch (...)
+        {
+            context.setState(LexerFSM::Expect_exp_2);
+            throw;
+        }
+        context.getState().Entry(context);
+    }
+    else if (c == ' ')
+
+    {
+        context.getState().Exit(context);
+        context.clearState();
+        try
+        {
+            ctxt.set_state(STATE::COMBINE_EXP);
+            ctxt.save_attribute();
+            context.setState(LexerFSM::Expect_end);
+        }
+        catch (...)
+        {
+            context.setState(LexerFSM::Expect_end);
+            throw;
+        }
+        context.getState().Entry(context);
+    }
+    else if (ctxt.is_end_of_line(c))
+
+    {
+        context.getState().Exit(context);
+        context.clearState();
+        try
+        {
+            ctxt.set_state(STATE::COMBINE_EXP);
+            ctxt.save_attribute();
+            ctxt.end_line();
+            context.setState(LexerFSM::Success);
+        }
+        catch (...)
+        {
+            context.setState(LexerFSM::Success);
+            throw;
+        }
+        context.getState().Entry(context);
+    }
+    else
+    {
+        context.getState().Exit(context);
+        context.clearState();
+        try
+        {
+            ctxt.set_state(STATE::NO);
+            context.setState(LexerFSM::Failure);
+        }
+        catch (...)
+        {
+            context.setState(LexerFSM::Failure);
+            throw;
+        }
+        context.getState().Entry(context);
+    }
 
 }
 

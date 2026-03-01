@@ -25,6 +25,11 @@ class LexerFSM_After_attribute;
 class LexerFSM_Expect_end;
 class LexerFSM_Failure;
 class LexerFSM_Success;
+class LexerFSM_Expect_as;
+class LexerFSM_Expect_space_aft_as;
+class LexerFSM_Expect_exp_1;
+class LexerFSM_Expect_join;
+class LexerFSM_Expect_exp_2;
 class LexerFSM_Default;
 class lexer_contextState;
 class parserContext;
@@ -64,6 +69,11 @@ public:
     static LexerFSM_Expect_end Expect_end;
     static LexerFSM_Failure Failure;
     static LexerFSM_Success Success;
+    static LexerFSM_Expect_as Expect_as;
+    static LexerFSM_Expect_space_aft_as Expect_space_aft_as;
+    static LexerFSM_Expect_exp_1 Expect_exp_1;
+    static LexerFSM_Expect_join Expect_join;
+    static LexerFSM_Expect_exp_2 Expect_exp_2;
 };
 
 class LexerFSM_Default :
@@ -174,7 +184,6 @@ public:
     {};
 
     virtual void next_char(parserContext& context, char c);
-    virtual void reset(parserContext& context);
 };
 
 class LexerFSM_Success :
@@ -187,6 +196,61 @@ public:
 
     virtual void next_char(parserContext& context, char c);
     virtual void reset(parserContext& context);
+};
+
+class LexerFSM_Expect_as :
+    public LexerFSM_Default
+{
+public:
+    LexerFSM_Expect_as(const char * const name, const int stateId)
+    : LexerFSM_Default(name, stateId)
+    {};
+
+    virtual void next_char(parserContext& context, char c);
+};
+
+class LexerFSM_Expect_space_aft_as :
+    public LexerFSM_Default
+{
+public:
+    LexerFSM_Expect_space_aft_as(const char * const name, const int stateId)
+    : LexerFSM_Default(name, stateId)
+    {};
+
+    virtual void next_char(parserContext& context, char c);
+};
+
+class LexerFSM_Expect_exp_1 :
+    public LexerFSM_Default
+{
+public:
+    LexerFSM_Expect_exp_1(const char * const name, const int stateId)
+    : LexerFSM_Default(name, stateId)
+    {};
+
+    virtual void next_char(parserContext& context, char c);
+};
+
+class LexerFSM_Expect_join :
+    public LexerFSM_Default
+{
+public:
+    LexerFSM_Expect_join(const char * const name, const int stateId)
+    : LexerFSM_Default(name, stateId)
+    {};
+
+    virtual void next_char(parserContext& context, char c);
+};
+
+class LexerFSM_Expect_exp_2 :
+    public LexerFSM_Default
+{
+public:
+    LexerFSM_Expect_exp_2(const char * const name, const int stateId)
+    : LexerFSM_Default(name, stateId)
+    {};
+
+    virtual void next_char(parserContext& context, char c);
 };
 
 class parserContext :
