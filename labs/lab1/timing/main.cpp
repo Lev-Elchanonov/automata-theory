@@ -313,7 +313,7 @@ public:
 
 
 
-using picoseconds = std::chrono::duration<long long, std::femto>; //10^-15
+
 
 int main() {
     SQLGenerator generator;
@@ -337,64 +337,62 @@ int main() {
     */
     std::ofstream file_out_reg("../time_results/regex.txt");
     for (int i = 0; i < 12; i++) {
-        std::string filename;
-        if (i == 0)
-            filename = "../files/1000.txt";
-        else if (i == 1)
-            filename = "../files/5000.txt";
-        else
-            filename = "../files/" + std::to_string((i-1) * 10000) + ".txt";
-        std::ifstream file(filename);
-        std::string current_string;
-        std::getline(file, current_string);
-        std::cout << "Length: " << current_string.size() << std::endl;
-        auto start = std::chrono::high_resolution_clock::now();
+        std::vector<std::string> strings = {100, ""};
+        for (auto& str : strings) {
+            if (i == 0)
+                str = generator.generateString(1000);
+            else if (i == 1)
+                str = generator.generateString(5000);
+            else
+                str = generator.generateString((i-1)*10000);
+        }
+
         std::pair<STATE, std::pair<std::string, std::vector<std::string>>> res;
-        for (size_t k = 0; k < 10; k++)
-            res= v_regex->lexline(current_string);
+        auto start = std::chrono::high_resolution_clock::now();
+        for (auto& str : strings) {
+            res = v_regex->lexline(str);
+        }
         auto end = std::chrono::high_resolution_clock::now();
 
         auto duration = end - start;
-        auto time = std::chrono::duration_cast<picoseconds>(duration);
+        auto time = std::chrono::duration_cast<std::chrono::microseconds>(duration).count();
+        double avg_time = time / 100;
         if (res.first != STATE::NO)
             std::cout << "SUCCESS" << std::endl;
 
-        std::chrono::duration<double> time_res = time;
-        file_out_reg << (time_res.count()) / 10 << std::endl;
-        file.close();
-        current_string.clear();
+        file_out_reg << avg_time << std::endl;
+        strings.clear();
     }
     file_out_reg.close();
 
 
     std::ofstream file_out_smc("../time_results/smc.txt");
     for (int i = 0; i < 12; i++) {
-        std::string filename;
-        if (i == 0)
-            filename = "../files/1000.txt";
-        else if (i == 1)
-            filename = "../files/5000.txt";
-        else
-            filename = "../files/" + std::to_string((i-1) * 10000) + ".txt";
-        std::ifstream file(filename);
-        std::string current_string;
-        std::getline(file, current_string);
-        std::cout << "Length: " << current_string.size() << std::endl;
-        auto start = std::chrono::high_resolution_clock::now();
         std::pair<STATE, std::pair<std::string, std::vector<std::string>>> res;
-        for (size_t k = 0; k < 10; k++)
-            res= v_smc->lexline(current_string);
-        auto end = std::chrono::high_resolution_clock::now();
 
+        std::vector<std::string> strings = {100, ""};
+        for (auto& str : strings) {
+            if (i == 0)
+                str = generator.generateString(1000);
+            else if (i == 1)
+                str = generator.generateString(5000);
+            else
+                str = generator.generateString((i-1)*10000);
+        }
+
+        auto start = std::chrono::high_resolution_clock::now();
+        for (auto& str : strings)
+            res= v_smc->lexline(str);
+        auto end = std::chrono::high_resolution_clock::now();
         auto duration = end - start;
-        auto time = std::chrono::duration_cast<picoseconds>(duration);
+        auto time = std::chrono::duration_cast<std::chrono::microseconds>(duration).count();
+        double avg_time = time / 100;
         if (res.first != STATE::NO)
             std::cout << "SUCCESS" << std::endl;
 
-        std::chrono::duration<double> time_res = time;
-        file_out_smc<< (time_res.count()) / 10 << std::endl;
-        file.close();
-        current_string.clear();
+
+        file_out_smc<< avg_time << std::endl;
+        strings.clear();
     }
     file_out_smc.close();
 
@@ -402,32 +400,31 @@ int main() {
 
     std::ofstream file_out_lex("../time_results/lex.txt");
     for (int i = 0; i < 12; i++) {
-        std::string filename;
-        if (i == 0)
-            filename = "../files/1000.txt";
-        else if (i == 1)
-            filename = "../files/5000.txt";
-        else
-            filename = "../files/" + std::to_string((i-1) * 10000) + ".txt";
-        std::ifstream file(filename);
-        std::string current_string;
-        std::getline(file, current_string);
-        std::cout << "Length: " << current_string.size() << std::endl;
-        auto start = std::chrono::high_resolution_clock::now();
         std::pair<STATE, std::pair<std::string, std::vector<std::string>>> res;
-        for (size_t k = 0; k < 10; k++)
-            res= v_lex->lexline(current_string);
+        std::vector<std::string> strings = {100, ""};
+        for (auto& str : strings) {
+            if (i == 0)
+                str = generator.generateString(1000);
+            else if (i == 1)
+                str = generator.generateString(5000);
+            else
+                str = generator.generateString((i-1)*10000);
+        }
+
+
+        auto start = std::chrono::high_resolution_clock::now();
+        for (auto& str : strings) {
+            res= v_lex->lexline(str);
+        }
         auto end = std::chrono::high_resolution_clock::now();
 
         auto duration = end - start;
-        auto time = std::chrono::duration_cast<picoseconds>(duration);
+        auto time = std::chrono::duration_cast<std::chrono::microseconds>(duration).count();
         if (res.first != STATE::NO)
             std::cout << "SUCCESS" << std::endl;
-
-        std::chrono::duration<double> time_res = time;
-        file_out_lex << (time_res.count()) / 10 << std::endl;
-        file.close();
-        current_string.clear();
+        double avg_time = time / 100;
+        file_out_lex << avg_time << std::endl;
+        strings.clear();
     }
     file_out_lex.close();
     return 0;

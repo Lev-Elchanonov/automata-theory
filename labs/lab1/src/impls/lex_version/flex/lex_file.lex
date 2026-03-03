@@ -4,24 +4,23 @@
 #include <iostream>
 #include "../include/lex_version.hpp"
 
-// Глобальные переменные для взаимодействия с C++
+
 std::string current_token;
 LexState current_state_ = LexState::INITIAL;
 std::vector<std::string> attributes;
 STATE predicted_state_ = STATE::NO;
 std::string exp_name_;
-// Вспомогательная функция для обновления токена
+
 void set_token(const char* text) {
     current_token = text;
 }
-
 %}
 
 %option noyywrap
 %x St_CREATE St_NAME St_AS St_JOIN St_LPAREN St_ATTR St_COMMA St_RPAREN St_R_ATTR
 %%
 
-    /* Начальное состояние - ожидаем CREATE */
+
 <INITIAL>{
     (?i:create)[ \t]+    {
         set_token(yytext);
@@ -46,7 +45,6 @@ void set_token(const char* text) {
     }
 }
 
-    /* После CREATE - ожидаем имя отношения */
 <St_CREATE>{
     [ \t]+         { /* ignore */ }
     [a-zA-Z._][a-zA-Z0-9._]* {
@@ -65,7 +63,6 @@ void set_token(const char* text) {
     }
 }
 
-    /* После имени - может быть ( или AS */
 <St_NAME>{
     [ \t]+         { /* ignore */ }
     "("            {
@@ -90,7 +87,6 @@ void set_token(const char* text) {
     }
 }
 
-    /* В режиме CREATE TABLE - после ( */
 <St_LPAREN>{
     [ \t]+         { /* ignore */ }
     [a-zA-Z._][a-zA-Z0-9._]* {
@@ -108,7 +104,6 @@ void set_token(const char* text) {
     }
 }
 
-    /* После атрибута - ожидаем , или ) */
 <St_ATTR>{
     [ \t]+         { /* ignore */ }
     ","            {
@@ -131,7 +126,6 @@ void set_token(const char* text) {
     }
 }
 
-    /* После запятой - ожидаем следующий атрибут */
 <St_COMMA>{
     [ \t]+         { /* ignore */ }
     [a-zA-Z._][a-zA-Z0-9._]* {
@@ -151,7 +145,7 @@ void set_token(const char* text) {
 
 
 <St_RPAREN>{
-        [ \t]+         { /* игнорируем пробелы */ }
+        [ \t]+         {}
         \n             {
             set_token("COMPLETE");
             current_state_ = LexState::SUCCESS;
@@ -172,12 +166,12 @@ void set_token(const char* text) {
         }
 }
 
-    /* В режиме CREATE JOIN - после AS */
+
 <St_AS>{
-    [ \t]+         { /* ignore */ }
+    [ \t]+         {}
     [a-zA-Z._][a-zA-Z0-9._]* {
         set_token(yytext);
-        attributes.push_back(yytext);  // Левое отношение
+        attributes.push_back(yytext);
         current_state_ = LexState::JOIN;
         BEGIN(St_JOIN);
         return 1;
@@ -190,30 +184,27 @@ void set_token(const char* text) {
     }
 }
 
-    /* После левого отношения - ожидаем JOIN */
 <St_JOIN>{
-    [ \t]+         { /* ignore */ }
+    [ \t]+         {}
     (?i:join)[ \t]      {
         set_token(yytext);
-        current_state_ = LexState::ATTR;  // Для правого отношения
+        current_state_ = LexState::ATTR;
         BEGIN(St_R_ATTR);
         return 1;
     }
     .              {
         set_token(yytext);
-        // Если после JOIN нет правого отношения, это ошибка
         current_state_ = LexState::ERROR;
         BEGIN(INITIAL);
         return 0;
     }
 }
 
-    /* После левого отношения - ожидаем JOIN */
 <St_R_ATTR>{
-    [ \t]+         { /* ignore */ }
+    [ \t]+         {}
     [a-zA-Z._][a-zA-Z0-9._]* {
         set_token(yytext);
-        attributes.push_back(yytext);  // Левое отношение
+        attributes.push_back(yytext);
         current_state_ = LexState::AFT_REXP;
         BEGIN(St_RPAREN);
         return 1;

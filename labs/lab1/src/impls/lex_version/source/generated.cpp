@@ -521,20 +521,19 @@ char *yytext;
 #include <iostream>
 #include "../include/lex_version.hpp"
 
-// Глобальные переменные для взаимодействия с C++
+
 std::string current_token;
 LexState current_state_ = LexState::INITIAL;
 std::vector<std::string> attributes;
 STATE predicted_state_ = STATE::NO;
 std::string exp_name_;
-// Вспомогательная функция для обновления токена
+
 void set_token(const char* text) {
     current_token = text;
 }
+#line 535 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/source/generated.cpp"
 
-#line 536 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/source/generated.cpp"
-
-#line 538 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/source/generated.cpp"
+#line 537 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/source/generated.cpp"
 
 #define INITIAL 0
 #define St_CREATE 1
@@ -760,12 +759,11 @@ YY_DECL
 		}
 
 	{
-#line 22 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
+#line 21 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
 
 
-#line 25 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
-    /* Начальное состояние - ожидаем CREATE */
-#line 769 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/source/generated.cpp"
+
+#line 767 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/source/generated.cpp"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -824,7 +822,7 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 27 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
+#line 25 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
 {
         set_token(yytext);
         current_state_ = LexState::CREATE;
@@ -834,7 +832,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 33 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
+#line 31 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
 {
             set_token(yytext);
             current_state_ = LexState::ERROR;
@@ -844,18 +842,18 @@ YY_RULE_SETUP
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 40 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
+#line 38 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
 { /* ignore */ }
 	YY_BREAK
 case 4:
 /* rule 4 can match eol */
 YY_RULE_SETUP
-#line 41 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
+#line 39 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
 { /* ignore */ }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 42 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
+#line 40 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
 {
         set_token(yytext);
         current_state_ = LexState::ERROR;
@@ -864,16 +862,15 @@ YY_RULE_SETUP
     }
 	YY_BREAK
 
-/* После CREATE - ожидаем имя отношения */
 
 case 6:
 YY_RULE_SETUP
-#line 52 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
+#line 49 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
 { /* ignore */ }
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 53 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
+#line 50 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
 {
         set_token(yytext);
         current_state_ = LexState::NAME;
@@ -884,7 +881,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 60 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
+#line 57 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
 {
 
         set_token(yytext);
@@ -894,16 +891,15 @@ YY_RULE_SETUP
     }
 	YY_BREAK
 
-/* После имени - может быть ( или AS */
 
 case 9:
 YY_RULE_SETUP
-#line 71 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
+#line 67 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
 { /* ignore */ }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 72 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
+#line 68 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
 {
         set_token(yytext);
         current_state_ = LexState::LPAREN;
@@ -914,7 +910,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 79 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
+#line 75 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
 {
         set_token(yytext);
         current_state_ = LexState::AS;
@@ -925,7 +921,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 86 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
+#line 82 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
 {
         set_token(yytext);
         current_state_ = LexState::ERROR;
@@ -934,16 +930,15 @@ YY_RULE_SETUP
     }
 	YY_BREAK
 
-/* В режиме CREATE TABLE - после ( */
 
 case 13:
 YY_RULE_SETUP
-#line 96 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
+#line 91 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
 { /* ignore */ }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 97 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
+#line 92 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
 {
         set_token(yytext);
         attributes.push_back(yytext);
@@ -954,7 +949,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 104 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
+#line 99 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
 {
         set_token(yytext);
         current_state_ = LexState::ERROR;
@@ -963,16 +958,15 @@ YY_RULE_SETUP
     }
 	YY_BREAK
 
-/* После атрибута - ожидаем , или ) */
 
 case 16:
 YY_RULE_SETUP
-#line 114 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
+#line 108 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
 { /* ignore */ }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 115 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
+#line 109 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
 {
         set_token(yytext);
         current_state_ = LexState::COMMA;
@@ -982,7 +976,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 121 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
+#line 115 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
 {
         set_token(yytext);
         current_state_ = LexState::RPAREN;
@@ -992,7 +986,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 127 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
+#line 121 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
 {
         set_token(yytext);
         current_state_ = LexState::ERROR;
@@ -1001,16 +995,15 @@ YY_RULE_SETUP
     }
 	YY_BREAK
 
-/* После запятой - ожидаем следующий атрибут */
 
 case 20:
 YY_RULE_SETUP
-#line 137 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
+#line 130 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
 { /* ignore */ }
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 138 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
+#line 131 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
 {
         set_token(yytext);
         attributes.push_back(yytext);
@@ -1021,7 +1014,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 145 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
+#line 138 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
 {
         set_token(yytext);
         current_state_ = LexState::ERROR;
@@ -1033,13 +1026,13 @@ YY_RULE_SETUP
 
 case 23:
 YY_RULE_SETUP
-#line 155 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
-{ /* игнорируем пробелы */ }
+#line 148 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
+{}
 	YY_BREAK
 case 24:
 /* rule 24 can match eol */
 YY_RULE_SETUP
-#line 156 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
+#line 149 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
 {
             set_token("COMPLETE");
             current_state_ = LexState::SUCCESS;
@@ -1048,7 +1041,7 @@ YY_RULE_SETUP
         }
 	YY_BREAK
 case YY_STATE_EOF(St_RPAREN):
-#line 162 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
+#line 155 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
 {
             set_token("COMPLETE");
             current_state_ = LexState::SUCCESS;
@@ -1058,7 +1051,7 @@ case YY_STATE_EOF(St_RPAREN):
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 168 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
+#line 161 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
 {
             set_token(yytext);
             current_state_ = LexState::ERROR;
@@ -1067,19 +1060,18 @@ YY_RULE_SETUP
         }
 	YY_BREAK
 
-/* В режиме CREATE JOIN - после AS */
 
 case 26:
 YY_RULE_SETUP
-#line 178 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
-{ /* ignore */ }
+#line 171 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
+{}
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 179 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
+#line 172 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
 {
         set_token(yytext);
-        attributes.push_back(yytext);  // Левое отношение
+        attributes.push_back(yytext);
         current_state_ = LexState::JOIN;
         BEGIN(St_JOIN);
         return 1;
@@ -1087,7 +1079,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 186 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
+#line 179 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
 {
         set_token(yytext);
         current_state_ = LexState::ERROR;
@@ -1096,48 +1088,45 @@ YY_RULE_SETUP
     }
 	YY_BREAK
 
-/* После левого отношения - ожидаем JOIN */
 
 case 29:
 YY_RULE_SETUP
-#line 196 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
-{ /* ignore */ }
+#line 188 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
+{}
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 197 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
+#line 189 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
 {
         set_token(yytext);
-        current_state_ = LexState::ATTR;  // Для правого отношения
+        current_state_ = LexState::ATTR;
         BEGIN(St_R_ATTR);
         return 1;
     }
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 203 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
+#line 195 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
 {
         set_token(yytext);
-        // Если после JOIN нет правого отношения, это ошибка
         current_state_ = LexState::ERROR;
         BEGIN(INITIAL);
         return 0;
     }
 	YY_BREAK
 
-/* После левого отношения - ожидаем JOIN */
 
 case 32:
 YY_RULE_SETUP
-#line 214 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
-{ /* ignore */ }
+#line 204 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
+{}
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 215 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
+#line 205 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
 {
         set_token(yytext);
-        attributes.push_back(yytext);  // Левое отношение
+        attributes.push_back(yytext);
         current_state_ = LexState::AFT_REXP;
         BEGIN(St_RPAREN);
         return 1;
@@ -1145,7 +1134,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 222 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
+#line 212 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
 {
         set_token(yytext);
         current_state_ = LexState::ERROR;
@@ -1156,10 +1145,10 @@ YY_RULE_SETUP
 
 case 35:
 YY_RULE_SETUP
-#line 230 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
+#line 220 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
 ECHO;
 	YY_BREAK
-#line 1163 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/source/generated.cpp"
+#line 1152 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/source/generated.cpp"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(St_CREATE):
 case YY_STATE_EOF(St_NAME):
@@ -2172,6 +2161,6 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 230 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
+#line 220 "/home/deracel/automata_theory/labs/lab1/src/impls/lex_version/flex/lex_file.lex"
 
 
