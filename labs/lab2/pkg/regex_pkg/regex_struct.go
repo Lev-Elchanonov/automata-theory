@@ -331,7 +331,7 @@ func processClBrace (stack *[]interface{}, tree *SyntaxTree, existGroups *map[st
 				Right: innerNode,
 			}
 			*stack = append(*stack, concatNode)
-		} else if groupName != ""{
+		} else {
 			*stack = append(*stack, refNode)
 		}
 	}
