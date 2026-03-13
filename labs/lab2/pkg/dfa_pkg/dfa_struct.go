@@ -270,7 +270,6 @@ func (d *Dfa) openFile(filename string) error {
 
 
 func (d *Dfa) SaveAndOpenGraphViz(filename string) error {
-	// Сохраняем DOT файл
 	content := d.GraphViz()
 	err := os.WriteFile(filename, []byte(content), 0644)
 	if err != nil {
@@ -280,7 +279,7 @@ func (d *Dfa) SaveAndOpenGraphViz(filename string) error {
 
 	pngFilename := strings.TrimSuffix(filename, ".dot") + ".png"
 
-	// Вызываем dot для генерации PNG
+
 	cmd := exec.Command("dot", "-Tpng", filename, "-o", pngFilename)
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("ошибка генерации PNG (установлен ли graphviz?): %v", err)
@@ -314,7 +313,6 @@ func (d *Dfa) PrintDebug(n *nfa.Nfa) {
 		}
 	}
 
-	// Начальное состояние
 	startKey := stateKey(d.StartState.NfaStates)
 	fmt.Printf("1) Z_e(S0_NFA) = Z_e({%d}) = %s -> %s_D\n",
 		n.StartState.ID, startKey, stateNames[d.StartState])
