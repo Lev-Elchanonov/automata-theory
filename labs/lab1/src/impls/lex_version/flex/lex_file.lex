@@ -2,8 +2,7 @@
 #include <string>
 #include <vector>
 #include <iostream>
-#include "../include/lex_version.hpp"
-
+#include "lex_version.hpp"
 
 std::string current_token;
 LexState current_state_ = LexState::INITIAL;
