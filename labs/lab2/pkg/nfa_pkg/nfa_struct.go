@@ -23,12 +23,17 @@ type GroupInfo struct {
 	IsRef bool
 	RefName string
 }
+type GroupAutomata struct {
+	Start *NfaState
+	End *NfaState
+}
 type Nfa struct {
 	StartState *NfaState
 	AcceptState *NfaState
 	States []*NfaState
 	StateCount int
 	Groups map[string]*GroupInfo //Инфо о группах захвата
+	GroupAutos map[string]*GroupAutomata
 }
 
 func newNfaState(id int) *NfaState {
@@ -46,6 +51,7 @@ func newNfa() *Nfa{
 		States: make([]*NfaState, 0),
 		StateCount: 0,
 		Groups: make(map[string]*GroupInfo),
+		GroupAutos: make(map[string]*GroupAutomata),
 	}
 }
 
@@ -296,38 +302,168 @@ func buildGroupNfa (node *reg.Node, nfa *Nfa) (*NfaState, *NfaState){
 
 	nodeStart.GroupInfo[node.Value] = true // помечаем что это состояние начало группы
 	markGroupStates(nodeStart, nodeStart, node.Value)
+	nfa.GroupAutos[node.Value] = &GroupAutomata{
+		Start: nodeStart,
+		End:   nodeAccept,
+	}
 	return nodeStart, nodeAccept
 }
 
 
 func markGroupStates(state, startState *NfaState, groupName string) {
-	if state == nil { return }
+	visited := make(map[*NfaState]bool)
+	markGroupStatesHelper(state, startState, groupName, visited)
+}
+
+func markGroupStatesHelper(state, startState *NfaState, groupName string, visited map[*NfaState]bool) {
+	if state == nil || visited[state] {
+		return
+	}
+	visited[state] = true
 
 	if state != startState {
 		state.GroupInfo[groupName] = false
 	}
 
 	for _, target := range state.Epsilons {
-		markGroupStates(target, startState, groupName)
+		markGroupStatesHelper(target, startState, groupName, visited)
 	}
 	for _, targets := range state.Transitions {
 		for _, target := range targets {
-			markGroupStates(target, startState, groupName)
+			markGroupStatesHelper(target, startState, groupName, visited)
 		}
 	}
 }
 
+
 func buildRefNfa (node *reg.Node, nfa *Nfa) (*NfaState, *NfaState){
-	start := nfa.addState()
-	accept := nfa.addState()
+	groupAuto := nfa.GroupAutos[node.Value]
+	cloneStart, cloneAccept := cloneNfa(groupAuto.Start, groupAuto.End, nfa, node.Value)
 
-	start.GroupInfo["ref:"+node.Value] = true
 
-	start.Epsilons = append(start.Epsilons, accept) // тут мы делаем сразу e-переход к accept, но,
-	accept.IsAcceptable = true						// когда мы будем встречать ссылку на группу, то
-	return start, accept							// мы будем сначала ссылаться на существующую группу, проходиться по ней и потом, если проход успешен, то делать e-переход start -> accept
+	markAsRef(cloneStart, node.Value)
+	return cloneStart, cloneAccept
+
+}
+func markAsRef(state *NfaState, groupName string) {
+	visited := make(map[*NfaState]bool)
+	markAsRefHelper(state, groupName, visited)
 }
 
+func markAsRefHelper(state *NfaState, groupName string, visited map[*NfaState]bool) {
+	if state == nil || visited[state] {
+		return
+	}
+	visited[state] = true
+
+	state.GroupInfo["ref:"+groupName] = true
+
+	for _, target := range state.Epsilons {
+		markAsRefHelper(target, groupName, visited)
+	}
+	for _, targets := range state.Transitions {
+		for _, target := range targets {
+			markAsRefHelper(target, groupName, visited)
+		}
+	}
+}
+
+
+/*
+func cloneNfa(start, accept *NfaState, targetNfa *Nfa, groupName string) (*NfaState, *NfaState) {
+	allStates := make(map[*NfaState]bool)
+	collectGroupStates(start, allStates, groupName)
+
+	stateMap := make(map[*NfaState]*NfaState)
+
+	for oldState := range allStates {
+		newState := targetNfa.addState()
+		stateMap[oldState] = newState
+	}
+
+
+	for oldState, newState := range stateMap {
+		for ch, targets := range oldState.Transitions {
+			for _, target := range targets {
+				if newTarget, ok := stateMap[target]; ok {
+					newState.Transitions[ch] = append(newState.Transitions[ch], newTarget)
+				}
+			}
+		}
+
+		for _, target := range oldState.Epsilons {
+			if newTarget, ok := stateMap[target]; ok {
+				newState.Epsilons = append(newState.Epsilons, newTarget)
+			}
+		}
+
+		newState.GroupInfo["ref:"+groupName] = oldState.GroupInfo[groupName]
+
+		newState.IsAcceptable = oldState.IsAcceptable
+	}
+
+	return stateMap[start], stateMap[accept]
+}
+*/
+func cloneNfa(start, accept *NfaState, targetNfa *Nfa, groupName string) (*NfaState, *NfaState) {
+	allStates := make(map[*NfaState]bool)
+	collectGroupStates(start, allStates, groupName)
+
+	stateMap := make(map[*NfaState]*NfaState)
+
+
+	for oldState := range allStates {
+		newState := targetNfa.addState()
+		stateMap[oldState] = newState
+	}
+
+	for oldState, newState := range stateMap {
+
+		for ch, targets := range oldState.Transitions {
+			for _, target := range targets {
+				if newTarget, ok := stateMap[target]; ok {
+					newState.Transitions[ch] = append(newState.Transitions[ch], newTarget)
+				}
+			}
+		}
+
+
+		for _, target := range oldState.Epsilons {
+			if newTarget, ok := stateMap[target]; ok {
+				newState.Epsilons = append(newState.Epsilons, newTarget)
+			}
+		}
+
+		newState.IsAcceptable = oldState.IsAcceptable
+	}
+
+
+	markAsRef(stateMap[start], groupName)
+
+	return stateMap[start], stateMap[accept]
+}
+
+
+func collectGroupStates(state *NfaState, visited map[*NfaState]bool, groupName string) {
+	if state == nil || visited[state] {
+		return
+	}
+
+	if _, belongs := state.GroupInfo[groupName]; !belongs {
+		return
+	}
+
+	visited[state] = true
+
+	for _, target := range state.Epsilons {
+		collectGroupStates(target, visited, groupName)
+	}
+	for _, targets := range state.Transitions {
+		for _, target := range targets {
+			collectGroupStates(target, visited, groupName)
+		}
+	}
+}
 
 
 func (n *Nfa) Print() {

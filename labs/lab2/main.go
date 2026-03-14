@@ -23,10 +23,15 @@ func main() {
 	//Tree.Print()
 	fmt.Println("\n\n")
 	Nfa := nfa.BuildNfaFromTree(Tree)
-	//Nfa.Print()
+	Nfa.Print()
 	Nfa.SaveAndOpenGraphViz("graphs/nfa_graph.dot")
 	Dfa := dfa.BuildDfaFromNfa(Nfa)
 	Dfa.PrintDebug(Nfa)
 	Dfa.SaveAndOpenGraphViz("graphs/dfa_graph.dot")
+	minDfa := dfa.Minimize(Dfa)
+
+	minDfa.SaveAndOpenGraphViz("graphs/mindfa_graph.dot")
+	Dfa.DebugMinimizationProcess()
+	minDfa.DebugPrint()
 	return
 }
