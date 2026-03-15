@@ -79,11 +79,11 @@ func collectGroups(node *reg.Node, groups *map[string]*GroupInfo) {
 				Name: node.Value,
 				StartPos: node.Position,
 			}
-	case reg.RefNode:
-		if info, exists := (*groups)[node.Value]; exists{
-			info.IsRef = true
-			info.RefName = node.Value
-		}
+		case reg.RefNode:
+			if info, exists := (*groups)[node.Value]; exists{
+				info.IsRef = true
+				info.RefName = node.Value
+			}
 	}
 	collectGroups(node.Left, groups)
 	collectGroups(node.Right, groups)
@@ -323,6 +323,7 @@ func markGroupStatesHelper(state, startState *NfaState, groupName string, visite
 		}
 	}
 }
+
 
 
 func buildRefNfa (node *reg.Node, nfa *Nfa) (*NfaState, *NfaState){

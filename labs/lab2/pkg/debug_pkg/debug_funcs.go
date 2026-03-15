@@ -2,8 +2,10 @@ package debug_pkg
 
 import (
 	"fmt"
+	dfa "lab2/pkg/dfa_pkg"
 	nfa "lab2/pkg/nfa_pkg"
 	rg "lab2/pkg/regex_pkg"
+	"sort"
 	"strings"
 )
 
@@ -96,3 +98,130 @@ func Print(n *nfa.Nfa) {
 	}
 }
 
+
+
+// FOR DFA
+// --------------------------------------------
+
+
+func DebugPrint(d *dfa.Dfa) {
+	fmt.Println("\n=== ДЕТАЛЬНЫЙ ДЕБАГ ДКА ===")
+	fmt.Printf("Всего состояний: %d\n", len(d.States))
+	fmt.Printf("Алфавит: %s\n", string(d.Alphabet))
+	fmt.Printf("Начальное состояние: %d\n", d.StartState.ID)
+
+	fmt.Printf("Принимающие состояния (%d шт): ", len(d.AcceptStates))
+	for i, state := range d.AcceptStates {
+		if i > 0 {
+			fmt.Printf(", ")
+		}
+		fmt.Printf("%d", state.ID)
+	}
+	fmt.Println()
+
+	if d.ErrorState != nil {
+		fmt.Printf("Состояние ошибки: %d\n", d.ErrorState.ID)
+	}
+
+	fmt.Println("\n--- Таблица переходов ---")
+
+	// Заголовок
+	fmt.Printf("%-10s", "Состояние")
+	for _, sym := range d.Alphabet {
+		fmt.Printf(" | '%c'", sym)
+	}
+	fmt.Println()
+	fmt.Println(strings.Repeat("-", 10+len(d.Alphabet)*8))
+
+
+	states := make([]*dfa.DfaState, 0, len(d.States))
+	for _, state := range d.States {
+		states = append(states, state)
+	}
+	sort.Slice(states, func(i, j int) bool { return states[i].ID < states[j].ID })
+
+	for _, state := range states {
+		marker := "  "
+		if state == d.ErrorState {
+			marker = "ERR"
+		} else if state.IsAcceptable {
+			marker = "ACC"
+		} else if state == d.StartState {
+			marker = "STR"
+		}
+
+		fmt.Printf("%-10s", fmt.Sprintf("%d %s", state.ID, marker))
+
+		for _, sym := range d.Alphabet {
+			nextState := state.Transitions[sym]
+			if nextState != nil {
+				fmt.Printf(" | %-6d", nextState.ID)
+			} else {
+				fmt.Printf(" | %-6s", "—")
+			}
+		}
+		fmt.Println()
+	}
+}
+
+
+func DebugPrintPartition(p *dfa.Partition, step int) {
+	fmt.Printf("\n=== Шаг %d: Разбиение ===\n", step)
+	fmt.Printf("Всего групп: %d\n", p.GroupsCount)
+
+	groups := make([]*dfa.Group, 0, len(p.Groups))
+	for _, group := range p.Groups {
+		groups = append(groups, group)
+	}
+	sort.Slice(groups, func(i, j int) bool { return groups[i].Id < groups[j].Id })
+
+	for _, group := range groups {
+
+		stateIDs := make([]int, 0, len(group.States))
+		for id := range group.States {
+			stateIDs = append(stateIDs, id)
+		}
+		sort.Ints(stateIDs)
+
+
+		statesStr := fmt.Sprintf("%v", stateIDs)
+		fmt.Printf("  Группа %2d: %s\n", group.Id, statesStr)
+	}
+}
+
+
+func DebugMinimizationProcess(d *dfa.Dfa) {
+	fmt.Println("\n=== ПРОЦЕСС МИНИМИЗАЦИИ ДКА ===")
+
+	fmt.Println("\n--- Шаг 1: Начальное разбиение ---")
+	acceptIDs := make([]int, 0, len(d.AcceptStates))
+	for _, state := range d.AcceptStates {
+		acceptIDs = append(acceptIDs, state.ID)
+	}
+	sort.Ints(acceptIDs)
+	fmt.Printf("Принимающие состояния: %v\n", acceptIDs)
+
+	nonAcceptIDs := make([]int, 0)
+	for _, state := range d.States {
+		if !state.IsAcceptable && state != d.ErrorState {
+			nonAcceptIDs = append(nonAcceptIDs, state.ID)
+		}
+	}
+	sort.Ints(nonAcceptIDs)
+	fmt.Printf("Непринимающие состояния: %v\n", nonAcceptIDs)
+
+	if d.ErrorState != nil {
+		fmt.Printf("Состояние ошибки: %d\n", d.ErrorState.ID)
+	}
+}
+
+
+func Print_pset(pset *dfa.Partition) {
+	for _, group := range pset.Groups {
+		fmt.Printf("->%d: ", group.Id)
+		for _, state := range group.States {
+			fmt.Printf("%d,", state.ID)
+		}
+		fmt.Printf("\n")
+	}
+}
