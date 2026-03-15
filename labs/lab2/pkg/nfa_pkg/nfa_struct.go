@@ -1,12 +1,7 @@
 package nfa
 
 import (
-	"fmt"
 	reg "lab2/pkg/regex_pkg"
-	"os"
-	"os/exec"
-	"runtime"
-	"strings"
 )
 type NfaState struct {
 	ID int
@@ -75,6 +70,7 @@ func BuildNfaFromTree (tree *reg.SyntaxTree) *Nfa {
 	return nfa
 }
 
+
 func collectGroups(node *reg.Node, groups *map[string]*GroupInfo) {
 	if node == nil{ return }
 	switch node.Type{
@@ -115,15 +111,13 @@ func buildNfaFromNode(node *reg.Node, nfa *Nfa) (*NfaState, *NfaState){
 	case reg.RefNode: return buildRefNfa(node, nfa)
 	default: // по умолчанию строим эпсилон
 		return buildEpsilonNfa(nfa)
-
-
 	}
 }
 
 func buildEpsilonNfa (nfa *Nfa) (*NfaState, *NfaState){
 	start := nfa.addState()
 	accept := nfa.addState()
-	start.Epsilons = append(start.Epsilons, accept) // почему мы так делаем?
+	start.Epsilons = append(start.Epsilons, accept)
 	accept.IsAcceptable = true
 	return start, accept
 }
@@ -204,21 +198,17 @@ func buildRepeatNfa(node *reg.Node, nfa *Nfa) (*NfaState, *NfaState) {
 		return buildNfaFromNode(node.Left, nfa)
 	}
 
-	// ВАЖНО: Строим шаблон во временном НКА
 	templateNfa := newNfa()
 	templateStart, templateAccept := buildNfaFromNode(node.Left, templateNfa)
 
-	// Собираем все состояния шаблона
 	templateStates := make(map[*NfaState]bool)
 	collectStates(templateStart, templateStates)
 
-	// Первая копия - импортируем в основной НКА
 	firstStart, firstAccept := importTemplate(templateStart, templateAccept, nfa, templateStates)
 	firstAccept.IsAcceptable = false
 
 	prevAccept := firstAccept
 
-	// Остальные копии
 	for i := 1; i < node.Repeat; i++ {
 		copyStart, copyAccept := importTemplate(templateStart, templateAccept, nfa, templateStates)
 
@@ -234,7 +224,7 @@ func buildRepeatNfa(node *reg.Node, nfa *Nfa) (*NfaState, *NfaState) {
 	return firstStart, prevAccept
 }
 
-// collectStates собирает все состояния в подграфе
+
 func collectStates(start *NfaState, states map[*NfaState]bool) {
 	queue := []*NfaState{start}
 	visited := make(map[*NfaState]bool)
@@ -264,19 +254,18 @@ func collectStates(start *NfaState, states map[*NfaState]bool) {
 	}
 }
 
-// importTemplate импортирует шаблон в основной НКА
+
+
 func importTemplate(templateStart, templateAccept *NfaState, targetNfa *Nfa,
 	templateStates map[*NfaState]bool) (*NfaState, *NfaState) {
 
 	stateMap := make(map[*NfaState]*NfaState)
 
-	// Создаем новые состояния ТОЛЬКО для шаблонных состояний
 	for oldState := range templateStates {
 		newState := targetNfa.addState()
 		stateMap[oldState] = newState
 	}
 
-	// Копируем переходы только между шаблонными состояниями
 	for oldState, newState := range stateMap {
 		for ch, targets := range oldState.Transitions {
 			for _, target := range targets {
@@ -340,11 +329,10 @@ func buildRefNfa (node *reg.Node, nfa *Nfa) (*NfaState, *NfaState){
 	groupAuto := nfa.GroupAutos[node.Value]
 	cloneStart, cloneAccept := cloneNfa(groupAuto.Start, groupAuto.End, nfa, node.Value)
 
-
 	markAsRef(cloneStart, node.Value)
 	return cloneStart, cloneAccept
-
 }
+
 func markAsRef(state *NfaState, groupName string) {
 	visited := make(map[*NfaState]bool)
 	markAsRefHelper(state, groupName, visited)
@@ -369,42 +357,6 @@ func markAsRefHelper(state *NfaState, groupName string, visited map[*NfaState]bo
 }
 
 
-/*
-func cloneNfa(start, accept *NfaState, targetNfa *Nfa, groupName string) (*NfaState, *NfaState) {
-	allStates := make(map[*NfaState]bool)
-	collectGroupStates(start, allStates, groupName)
-
-	stateMap := make(map[*NfaState]*NfaState)
-
-	for oldState := range allStates {
-		newState := targetNfa.addState()
-		stateMap[oldState] = newState
-	}
-
-
-	for oldState, newState := range stateMap {
-		for ch, targets := range oldState.Transitions {
-			for _, target := range targets {
-				if newTarget, ok := stateMap[target]; ok {
-					newState.Transitions[ch] = append(newState.Transitions[ch], newTarget)
-				}
-			}
-		}
-
-		for _, target := range oldState.Epsilons {
-			if newTarget, ok := stateMap[target]; ok {
-				newState.Epsilons = append(newState.Epsilons, newTarget)
-			}
-		}
-
-		newState.GroupInfo["ref:"+groupName] = oldState.GroupInfo[groupName]
-
-		newState.IsAcceptable = oldState.IsAcceptable
-	}
-
-	return stateMap[start], stateMap[accept]
-}
-*/
 func cloneNfa(start, accept *NfaState, targetNfa *Nfa, groupName string) (*NfaState, *NfaState) {
 	allStates := make(map[*NfaState]bool)
 	collectGroupStates(start, allStates, groupName)
@@ -436,8 +388,6 @@ func cloneNfa(start, accept *NfaState, targetNfa *Nfa, groupName string) (*NfaSt
 
 		newState.IsAcceptable = oldState.IsAcceptable
 	}
-
-
 	markAsRef(stateMap[start], groupName)
 
 	return stateMap[start], stateMap[accept]
@@ -463,135 +413,6 @@ func collectGroupStates(state *NfaState, visited map[*NfaState]bool, groupName s
 			collectGroupStates(target, visited, groupName)
 		}
 	}
-}
-
-
-func (n *Nfa) Print() {
-	fmt.Println("=== NFA ===")
-	fmt.Printf("Start state: %d\n", n.StartState.ID)
-	fmt.Printf("Accept state: %d\n", n.AcceptState.ID)
-	fmt.Println("States:")
-
-	for _, state := range n.States {
-		fmt.Printf("  State %d:", state.ID)
-		if state.IsAcceptable {
-			fmt.Print(" (accepting)")
-		}
-		fmt.Println()
-
-		if len(state.Epsilons) > 0 {
-			fmt.Printf("    ε ->")
-			for _, eps := range state.Epsilons {
-				fmt.Printf(" %d", eps.ID)
-			}
-			fmt.Println()
-		}
-
-		for ch, targets := range state.Transitions {
-			fmt.Printf("    '%c' ->", ch)
-			for _, target := range targets {
-				fmt.Printf(" %d", target.ID)
-			}
-			fmt.Println()
-		}
-
-		if len(state.GroupInfo) > 0 {
-			fmt.Printf("    groups: %v\n", state.GroupInfo)
-		}
-	}
-}
-
-func (n *Nfa) GraphViz() string {
-	var builder strings.Builder
-
-	builder.WriteString("digraph NFA {\n")
-	builder.WriteString("  rankdir=LR;\n")  // Left to Right orientation
-	builder.WriteString("  node [shape = circle];\n")
-
-	builder.WriteString(fmt.Sprintf("  start [shape = point, label = \"\"];\n"))
-	builder.WriteString(fmt.Sprintf("  start -> %d;\n", n.StartState.ID))
-
-	for _, state := range n.States {
-		if state.IsAcceptable {
-			builder.WriteString(fmt.Sprintf("  %d [shape = doublecircle];\n", state.ID))
-		}
-	}
-
-
-	for _, state := range n.States {
-		for _, eps := range state.Epsilons {
-			builder.WriteString(fmt.Sprintf("  %d -> %d [label = \"ε\"];\n", state.ID, eps.ID))
-		}
-
-		for ch, targets := range state.Transitions {
-			for _, target := range targets {
-
-				label := string(ch)
-				if ch == '"' {
-					label = "\\\""
-				} else if ch == '\\' {
-					label = "\\\\"
-				}
-				builder.WriteString(fmt.Sprintf("  %d -> %d [label = \"%s\"];\n",
-					state.ID, target.ID, label))
-			}
-		}
-
-		if len(state.GroupInfo) > 0 {
-			groupLabels := make([]string, 0)
-			for groupName, isStart := range state.GroupInfo {
-				if isStart {
-					groupLabels = append(groupLabels, fmt.Sprintf("start:%s", groupName))
-				} else {
-					groupLabels = append(groupLabels, groupName)
-				}
-			}
-			builder.WriteString(fmt.Sprintf("  %d [xlabel=\"%s\"];\n",
-				state.ID, strings.Join(groupLabels, ", ")))
-		}
-	}
-
-	builder.WriteString("}\n")
-	return builder.String()
-}
-
-func (n *Nfa) openFile(filename string) error {
-	var cmd *exec.Cmd
-
-	switch runtime.GOOS {
-	case "windows":
-		cmd = exec.Command("cmd", "/c", "start", filename)
-	case "darwin": // macOS
-		cmd = exec.Command("open", filename)
-	default: // Linux и другие Unix-like
-		cmd = exec.Command("xdg-open", filename)
-	}
-
-	if err := cmd.Start(); err != nil {
-		return fmt.Errorf("ошибка открытия файла: %v", err)
-	}
-
-	return nil
-}
-
-
-func (n *Nfa) SaveAndOpenGraphViz(filename string) error {
-	content := n.GraphViz()
-	err := os.WriteFile(filename, []byte(content), 0644)
-	if err != nil {
-		return fmt.Errorf("ошибка сохранения файла: %v", err)
-	}
-
-	pngFilename := strings.TrimSuffix(filename, ".dot") + ".png"
-
-	cmd := exec.Command("dot", "-Tpng", filename, "-o", pngFilename)
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("ошибка генерации PNG (установлен ли graphviz?): %v", err)
-	}
-
-	fmt.Printf("Граф сохранен в %s и %s\n", filename, pngFilename)
-
-	return n.openFile(pngFilename)
 }
 
 

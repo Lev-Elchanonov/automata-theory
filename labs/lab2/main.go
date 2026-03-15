@@ -8,6 +8,8 @@ import (
 	reg "lab2/pkg/regex_pkg"
 	"os"
 	"strings"
+	graph "lab2/pkg/graph_pkg"
+	debug "lab2/pkg/debug_pkg"
 )
 
 func main() {
@@ -20,11 +22,11 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-	//Tree.Print()
-	fmt.Println("\n\n")
+
 	Nfa := nfa.BuildNfaFromTree(Tree)
-	Nfa.Print()
-	Nfa.SaveAndOpenGraphViz("graphs/nfa_graph.dot")
+	debug.Print(Nfa)
+	graph.SaveAndOpenGraphViz(Nfa, "graphs/nfa_graph.dot")
+
 	Dfa := dfa.BuildDfaFromNfa(Nfa)
 	Dfa.PrintDebug(Nfa)
 	Dfa.SaveAndOpenGraphViz("graphs/dfa_graph.dot")
