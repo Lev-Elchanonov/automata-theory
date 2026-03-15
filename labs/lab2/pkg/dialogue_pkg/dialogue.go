@@ -49,5 +49,21 @@ func Dialogue () {
 		err = graph.SaveAndOpenGraphVizDfa(minimizedDfa, "graphs/mindfa_graph.dot")
 
 		reader.ReadString('\n')
+		for {
+			fmt.Println("Inter string for check: ")
+			str,_ := reader.ReadString('\n')
+			str = strings.TrimSuffix(str, "\n")
+			res := minimizedDfa.CheckString(str)
+			if res {
+				fmt.Println("SUCCESS\n")
+			} else {
+				fmt.Println("FAILURE\n")
+			}
+			input, err = reader.ReadString('\n')
+			if input == "\n" {
+				break
+			}
+		}
+
 	}
 }
