@@ -28,5 +28,6 @@ func main() {
 	Dfa := dfa.BuildDfaFromNfa(Nfa)
 	Dfa.PrintDebug(Nfa)
 	Dfa.SaveAndOpenGraphViz("graphs/dfa_graph.dot")
+	minDfa := Minimize
 	return
 }

@@ -26,8 +26,6 @@ type Node struct {
 	Right *Node
 	Repeat int
 	Nullable bool
-	FirstPos []int
-	LastPos []int
 	Position int
 }
 
@@ -222,31 +220,35 @@ func processOpBrace (regex *string, i int, stack *[]interface{}, existGroups *ma
 		endNamePos := -1
 		var name string
 		is_open := false
-		for j := i + 2; j < len(*regex); j++ {
-			if (*regex)[j] == '<' || (*regex)[j] == '>'{
+		/*
+			for j := i + 2; j < len(*regex); j++ {
+				if (*regex)[j] == '<' || (*regex)[j] == '>'{
 
-				if (*regex)[j] == '<' && !is_open{
-					is_open = true
+					if (*regex)[j] == '<' && !is_open{
+						is_open = true
+					}
+					if j >= 1 && j+1 < len(*regex) && (*regex)[j-1] == '%' && (*regex)[j+1] == '%' {
+						j = changePers(regex, j, &name)
+						continue
+					}
+					if (*regex)[j] == '<' && is_open{
+						return -1
+					}
+					if (*regex)[j] == '>' {
+						endNamePos = j
+						break
+					}
 				}
-				if j >= 1 && j+1 < len(*regex) && (*regex)[j-1] == '%' && (*regex)[j+1] == '%' {
-					j = changePers(regex, j, &name)
-					continue
-				}
-				if (*regex)[j] == '<' && is_open{
-					return -1
-				}
-				if (*regex)[j] == '>' {
-					endNamePos = j
-					break
-				}
+
+				name += string((*regex)[j])
 			}
-
-			name += string((*regex)[j])
+		*/
+		if braceWork(2, i, regex, &is_open, &name, &endNamePos) == -1 {
+			return -1
 		}
 		if endNamePos == -1 {
 			return -1
 		}
-		fmt.Printf("Имя группы: '%s'\n", name)
 		value, exists := (*existGroups)[name]
 		if exists {
 			(*existGroups)[name] = value+1
@@ -298,10 +300,7 @@ func processClBrace (stack *[]interface{}, tree *SyntaxTree, existGroups *map[st
 	}
 
 	count, exists := (*existGroups)[groupName]
-	fmt.Println(groupName)
 	if !exists || (groupName == "") {
-		fmt.Printf("Stack size: %d\n", len(*stack))
-		fmt.Printf("GroupFound: %b\n", groupFound)
 		if len(*stack) == 0{
 			*stack = append(*stack, innerNode)
 			return nil
@@ -311,7 +310,6 @@ func processClBrace (stack *[]interface{}, tree *SyntaxTree, existGroups *map[st
 	}
 
 	if count == 0{
-		fmt.Println("declaring group")
 		groupNode := &Node{
 			Type:  GroupNode,
 			Value: groupName,
@@ -319,7 +317,6 @@ func processClBrace (stack *[]interface{}, tree *SyntaxTree, existGroups *map[st
 		}
 		*stack = append(*stack, groupNode)
 	} else {
-		fmt.Println("referencing group")
 		refNode := &Node{
 			Type:  RefNode,
 			Value: groupName,
@@ -342,11 +339,11 @@ func processKlini(stack *[]interface{}, i int) (int){
 	if len(*stack) > 0 {
 		last := (*stack)[len(*stack)-1]
 		if node, ok := last.(*Node); ok {
-			starNode := &Node{
+			kliniNode := &Node{
 				Type: KliniNode,
 				Left: node,
 			}
-			(*stack)[len(*stack)-1] = starNode
+			(*stack)[len(*stack)-1] = kliniNode
 		}
 	}
 	i += 2
@@ -396,30 +393,35 @@ func processOpFigBrace(regex *string, i int, stack *[]interface{}) (int){
 	return i
 }
 
+// обрабатывает только ссылки на именнованные группы захвата
 func processOpTreeBrace(regex *string, i int, stack *[]interface{}, groupsCount *map[string]int) (int){
 	endNamePos := -1
 	var name string
 	is_open := false
-	for j := i + 1; j < len(*regex); j++ {
-		if (*regex)[j] == '<' || (*regex)[j] == '>'{
-			if (*regex)[j] == '<' && !is_open{
-				is_open = true
+	/*
+		for j := i + 1; j < len(*regex); j++ {
+			if (*regex)[j] == '<' || (*regex)[j] == '>'{
+				if (*regex)[j] == '<' && !is_open{
+					is_open = true
+				}
+				if j >= 1 && j+1 < len(*regex) && (*regex)[j-1] == '%' && (*regex)[j+1] == '%' {
+					j = changePers(regex, j, &name)
+					continue
+				}
+				if (*regex)[j] == '<' && is_open{
+					return -1
+				}
+				if (*regex)[j] == '>' {
+					endNamePos = j
+					break
+				}
 			}
-			if j >= 1 && j+1 < len(*regex) && (*regex)[j-1] == '%' && (*regex)[j+1] == '%' {
-				j = changePers(regex, j, &name)
-				continue
-			}
-			if (*regex)[j] == '<' && is_open{
-				return -1
-			}
-			if (*regex)[j] == '>' {
-				endNamePos = j
-				break
-			}
+			name += string((*regex)[j])
 		}
-		name += string((*regex)[j])
+	*/
+	if braceWork(1, i, regex, &is_open, &name, &endNamePos) == -1 {
+		return -1
 	}
-	fmt.Printf("%s\n", name)
 	if endNamePos == -1 {
 		return -1
 	}
@@ -437,6 +439,28 @@ func processOpTreeBrace(regex *string, i int, stack *[]interface{}, groupsCount 
 	return i
 }
 
+func braceWork (delta, i int, regex *string, is_open *bool, name *string, endNamePos *int) (int) {
+	for j := i + delta; j < len(*regex); j++ {
+		if (*regex)[j] == '<' || (*regex)[j] == '>' {
+			if (*regex)[j] == '<' && !*is_open {
+				*is_open = true
+			}
+			if j >= 1 && j+1 < len(*regex) && (*regex)[j-1] == '%' && (*regex)[j+1] == '%' {
+				j = changePers(regex, j, name)
+				continue
+			}
+			if (*regex)[j] == '<' && *is_open {
+				return -1
+			}
+			if (*regex)[j] == '>' {
+				*endNamePos = j
+				break
+			}
+		}
+		*name += string((*regex)[j])
+	}
+	return 0
+}
 
 func processDefault(ch byte, i int, regex *string, tree *SyntaxTree, stack *[]interface{}) (int) {
 	if ch == '%' && i+2 < len(*regex) && i+2 < len(*regex) && (*regex)[i+2] == '%' {
