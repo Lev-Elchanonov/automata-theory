@@ -24,6 +24,10 @@ func Dialogue () {
 
 
 		tree, err := reg.BuildSyntaxTree(input)
+		if (err != nil) {
+			fmt.Println(err)
+			continue
+		}
 		fmt.Println("Syntax tree is ready!\n")
 		reader.ReadString('\n')
 
@@ -36,7 +40,11 @@ func Dialogue () {
 		reader.ReadString('\n')
 
 
-		dfaAutomaton := dfa.BuildDfaFromNfa(nfaAutomaton)
+		dfaAutomaton, err := dfa.BuildDfaFromNfa(nfaAutomaton)
+		if (err != nil) {
+			fmt.Println(err)
+			continue
+		}
 		fmt.Println("DFA is ready!\n")
 		err = graph.SaveAndOpenGraphVizDfa(dfaAutomaton, "graphs/dfa_graph.dot")
 

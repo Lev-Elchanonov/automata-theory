@@ -29,6 +29,7 @@ type Nfa struct {
 	StateCount int
 	Groups map[string]*GroupInfo //Инфо о группах захвата
 	GroupAutos map[string]*GroupAutomata
+	RefCount int
 }
 
 func newNfaState(id int) *NfaState {
@@ -62,7 +63,7 @@ func (n* Nfa) addState() *NfaState {
 func BuildNfaFromTree (tree *reg.SyntaxTree) *Nfa {
 	nfa := newNfa()
 
-	collectGroups(tree.Root, &nfa.Groups) // сбор инфы о группах захвата
+	collectGroups(nfa, tree.Root, &nfa.Groups) // сбор инфы о группах захвата
 
 	start, accept := buildNfaFromNode(tree.Root, nfa)
 	nfa.StartState = start
@@ -71,7 +72,7 @@ func BuildNfaFromTree (tree *reg.SyntaxTree) *Nfa {
 }
 
 
-func collectGroups(node *reg.Node, groups *map[string]*GroupInfo) {
+func collectGroups(nfa *Nfa, node *reg.Node, groups *map[string]*GroupInfo) {
 	if node == nil{ return }
 	switch node.Type{
 		case reg.GroupNode:
@@ -83,10 +84,11 @@ func collectGroups(node *reg.Node, groups *map[string]*GroupInfo) {
 			if info, exists := (*groups)[node.Value]; exists{
 				info.IsRef = true
 				info.RefName = node.Value
+				nfa.RefCount++
 			}
 	}
-	collectGroups(node.Left, groups)
-	collectGroups(node.Right, groups)
+	collectGroups(nfa, node.Left, groups)
+	collectGroups(nfa, node.Right, groups)
 }
 
 
@@ -291,23 +293,40 @@ func buildGroupNfa (node *reg.Node, nfa *Nfa) (*NfaState, *NfaState){
 
 	nodeStart.GroupInfo[node.Value] = true // помечаем что это состояние начало группы
 	markGroupStates(nodeStart, nodeStart, node.Value)
+	nfa.GroupAutos[node.Value] = &GroupAutomata{
+		Start: nodeStart,
+		End:   nodeAccept,
+	}
 	return nodeStart, nodeAccept
 }
 
 
-func markGroupStates(state, startState *NfaState, groupName string) {
-	if state == nil { return }
+func markGroupStates(start, startState *NfaState, groupName string) {
+	queue := []*NfaState{start}
+	visited := make(map[*NfaState]bool)
+	visited[start] = true
 
-	if state != startState {
-		state.GroupInfo[groupName] = false
-	}
+	for len(queue) > 0 {
+		current := queue[0]
+		queue = queue[1:]
 
-	for _, target := range state.Epsilons {
-		markGroupStates(target, startState, groupName)
-	}
-	for _, targets := range state.Transitions {
-		for _, target := range targets {
-			markGroupStates(target, startState, groupName)
+		if current != startState {
+			current.GroupInfo[groupName] = false
+		}
+
+		for _, target := range current.Epsilons {
+			if !visited[target] {
+				visited[target] = true
+				queue = append(queue, target)
+			}
+		}
+		for _, targets := range current.Transitions {
+			for _, target := range targets {
+				if !visited[target] {
+					visited[target] = true
+					queue = append(queue, target)
+				}
+			}
 		}
 	}
 }

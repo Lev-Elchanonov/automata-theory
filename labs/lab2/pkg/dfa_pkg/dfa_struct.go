@@ -1,6 +1,7 @@
 package dfa
 
 import (
+	"context"
 	nfa "lab2/pkg/nfa_pkg"
 	"sort"
 	"strconv"
@@ -35,7 +36,8 @@ func newDfaState(id int, nfastates map[int]*nfa.NfaState) *DfaState {
 }
 
 
-func BuildDfaFromNfa(n *nfa.Nfa) *Dfa{
+func BuildDfaFromNfa(n *nfa.Nfa) (*Dfa, error){
+
 	dfa := &Dfa{
 		States: make([]*DfaState, 0),
 		StateCount : 0,
@@ -91,7 +93,7 @@ func BuildDfaFromNfa(n *nfa.Nfa) *Dfa{
 			current.Transitions[symbol] = targetState
 		}
 	}
-	return dfa
+	return dfa, nil
 }
 
 
@@ -199,4 +201,94 @@ func createErrorState(n *Dfa) *DfaState{
 
 
 
+//---------------------------
+type Context struct {
+	State *nfa.NfaState
+	Groups map[string]string
+	GroupStart map[string]int
+	Pos int
+}
 
+
+func checkString(n *nfa.Nfa, input string) (bool, map[string]string) {
+	contexts := []Context{{
+		State: n.StartState,
+		Groups: make(map[string]string),
+		GroupStart: make(map[string]int),
+		Pos: 0,
+	}}
+
+	for len(contexts) > 0 {
+		newContexts := []Context{}
+
+		for _,ctx := range contexts {
+			if ctx.Pos == len(input){ // конец строки
+				if ctx.State.IsAcceptable{
+					res := make(map[string]string)
+					for grpName, start := range ctx.GroupStart{
+						res[grpName] = input[start:ctx.Pos]
+					}
+					return true, res
+				}
+				continue
+			}
+
+			if ctx.State.IsRef {
+				handleRef(ctx, input, &newContexts)
+				continue
+			}
+
+			ch := input[ctx.Pos]
+			if targets, ok := ctx.State.Transitions[ch]; ok {
+				for _, target := range targets {
+					newCtx := Context{
+						State:      target,
+						Groups:     copyGroups(ctx.Groups),
+						GroupStart: copyGroupStarts(ctx.GroupStart),
+						Pos:        ctx.Pos + 1,
+					}
+					// Отслеживаем начала групп
+					for groupName, isStart := range target.GroupInfo {
+						if isStart {
+							newCtx.GroupStart[groupName] = ctx.Pos
+						}
+					}
+					newContexts = append(newContexts, newCtx)
+				}
+			}
+			for _, eps := range ctx.State.Epsilons {
+				if !eps.IsRef { // не обрабатываем ссылки как ε
+					newContexts = append(newContexts, Context{
+						State:      eps,
+						Groups:     ctx.Groups,
+						GroupStart: ctx.GroupStart,
+						Pos:        ctx.Pos,
+					})
+				}
+			}
+		}
+	contexts = newContexts
+	}
+	return false, nil
+}
+
+func copyGroups(original map[string]string) map[string]string {
+	result := make(map[string]string)
+	for k, v := range original {
+		result[k] = v
+	}
+	return result
+}
+
+func copyGroupStarts(original map[string]int) map[string]int {
+	result := make(map[string]int)
+	for k, v := range original {
+		result[k] = v
+	}
+	return result
+}
+
+func handleRef (ctx Context, input string, newContexts *[]Context) {
+	expectedText := ctx.Groups[ctx.State.RefGroup]
+
+}

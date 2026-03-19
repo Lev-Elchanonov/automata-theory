@@ -27,6 +27,7 @@ type Node struct {
 	Repeat int
 	Nullable bool
 	Position int
+	Scope map[string]bool
 }
 
 type SyntaxTree struct{
@@ -81,10 +82,13 @@ func BuildSyntaxTree (regex string) (*SyntaxTree, error) {
 		}
 	}
 	if len(stack) != 1{
-
 		return nil, fmt.Errorf("unknown regex")
 	}
 	tree.Root = stack[0].(*Node)
+
+	if err := tree.validateScopes(); err != nil {
+		return nil, err
+	}
 	return tree, nil
 }
 
@@ -385,3 +389,92 @@ func processDefault(ch byte, i int, regex *string, tree *SyntaxTree, stack *[]in
 	}
 	return i
 }
+
+
+// -- проверки на скоупы для ссылок
+
+func (tree* SyntaxTree) validateScopes() error {
+	computeScopes(tree.Root, make(map[string]bool))
+	return checkRefs(tree.Root)
+}
+
+func computeScopes(node *Node, incScope map[string]bool) map[string]bool {
+	if node == nil {
+		return incScope
+	}
+	node.Scope = copyMap(incScope)
+	switch node.Type {
+	case GroupNode:
+		computeScopes(node.Left, node.Scope)
+		node.Scope[node.Value] = true
+	case RefNode:
+		computeScopes(node.Left, node.Scope)
+		computeScopes(node.Right, node.Scope)
+		return node.Scope
+	case ConcatNode:
+		leftScope := computeScopes(node.Left, node.Scope)
+		rightScope := computeScopes(node.Right, mergeScopes(node.Scope, leftScope))
+		node.Scope = mergeScopes(leftScope, rightScope)
+		return node.Scope
+	case UnionNode:
+		leftScope := computeScopes(node.Left, copyMap(node.Scope))
+		rightScope := computeScopes(node.Right, copyMap(node.Scope))
+		node.Scope = intersectScopes(leftScope, rightScope) // после юниона видны только те группы, которые определены в обоих ветках
+		return node.Scope
+	default:
+		computeScopes(node.Left, node.Scope)
+		computeScopes(node.Right, node.Scope)
+		return node.Scope
+	}
+	return node.Scope
+}
+
+func checkRefs(node *Node) error {
+	if node == nil {
+		return nil
+	}
+	if node.Type == RefNode {
+		if node.Scope == nil {
+			return fmt.Errorf("Scope not computed for ref node")
+		}
+		if !node.Scope[node.Value] {
+			return fmt.Errorf("Reference to undefined group '%s' at position %d", node.Value, node.Position)
+		}
+	}
+
+	if err := checkRefs(node.Left); err != nil {
+		return err
+	}
+	return checkRefs(node.Right)
+}
+
+func copyMap(m map[string]bool) map[string]bool {
+	if m == nil {
+		return make(map[string]bool)
+	}
+	newMap := make(map[string]bool)
+	for k, v := range m {
+		newMap[k] = v
+	}
+	return newMap
+}
+
+func mergeScopes(left, right map[string]bool) map[string]bool {
+	result := copyMap(left)
+	for k, v := range right {
+		result[k] = v
+	}
+	return result
+}
+
+func intersectScopes(left, right map[string]bool) map[string]bool {
+	result := make(map[string]bool)
+	for k, v := range left {
+		if right[k] {
+			result[k] = v
+		}
+	}
+	return result
+}
+
+
