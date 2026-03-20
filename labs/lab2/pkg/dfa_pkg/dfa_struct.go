@@ -1,8 +1,9 @@
 package dfa
 
 import (
-	"context"
+	"fmt"
 	nfa "lab2/pkg/nfa_pkg"
+	reg "lab2/pkg/regex_pkg"
 	"sort"
 	"strconv"
 	"strings"
@@ -37,7 +38,9 @@ func newDfaState(id int, nfastates map[int]*nfa.NfaState) *DfaState {
 
 
 func BuildDfaFromNfa(n *nfa.Nfa) (*Dfa, error){
-
+	if n.RefCount != 0 || len(n.Groups) != 0 {
+		return nil, fmt.Errorf("Nfa has Named Groups or references. Please inter expression before compile\n")
+	}
 	dfa := &Dfa{
 		States: make([]*DfaState, 0),
 		StateCount : 0,
@@ -206,30 +209,49 @@ type Context struct {
 	State *nfa.NfaState
 	Groups map[string]string
 	GroupStart map[string]int
+	GroupClosed map[string]bool
 	Pos int
 }
 
-
 func checkString(n *nfa.Nfa, input string) (bool, map[string]string) {
 	contexts := []Context{{
-		State: n.StartState,
-		Groups: make(map[string]string),
+		State:      n.StartState,
+		Groups:     make(map[string]string),
 		GroupStart: make(map[string]int),
-		Pos: 0,
+		GroupClosed: make(map[string]bool),
+		Pos:        0,
 	}}
 
 	for len(contexts) > 0 {
 		newContexts := []Context{}
 
-		for _,ctx := range contexts {
-			if ctx.Pos == len(input){ // конец строки
-				if ctx.State.IsAcceptable{
+		for _, ctx := range contexts {
+			if ctx.Pos == len(input) {
+				if ctx.State.IsAcceptable {
 					res := make(map[string]string)
-					for grpName, start := range ctx.GroupStart{
-						res[grpName] = input[start:ctx.Pos]
+					for grpName, text := range ctx.Groups {
+						res[grpName] = text
+					}
+					for grpName, start := range ctx.GroupStart {
+						if _, exists := res[grpName]; !exists {
+							res[grpName] = input[start:ctx.Pos]
+						}
 					}
 					return true, res
+
 				}
+				for _, eps := range ctx.State.Epsilons {
+					newContexts = append(newContexts, Context{
+						State:       eps,
+						Groups:      ctx.Groups,
+						GroupStart:  ctx.GroupStart,
+						GroupClosed: ctx.GroupClosed,
+						Pos:         ctx.Pos,
+
+					})
+
+				}
+
 				continue
 			}
 
@@ -242,12 +264,14 @@ func checkString(n *nfa.Nfa, input string) (bool, map[string]string) {
 			if targets, ok := ctx.State.Transitions[ch]; ok {
 				for _, target := range targets {
 					newCtx := Context{
-						State:      target,
-						Groups:     copyGroups(ctx.Groups),
-						GroupStart: copyGroupStarts(ctx.GroupStart),
-						Pos:        ctx.Pos + 1,
+						State:       target,
+						Groups:      copyGroups(ctx.Groups),
+						GroupStart:  copyGroupStarts(ctx.GroupStart),
+						GroupClosed: copyGroupClosed(ctx.GroupClosed),
+						Pos:         ctx.Pos + 1,
+
 					}
-					// Отслеживаем начала групп
+
 					for groupName, isStart := range target.GroupInfo {
 						if isStart {
 							newCtx.GroupStart[groupName] = ctx.Pos
@@ -256,22 +280,83 @@ func checkString(n *nfa.Nfa, input string) (bool, map[string]string) {
 					newContexts = append(newContexts, newCtx)
 				}
 			}
+
 			for _, eps := range ctx.State.Epsilons {
-				if !eps.IsRef { // не обрабатываем ссылки как ε
-					newContexts = append(newContexts, Context{
-						State:      eps,
-						Groups:     ctx.Groups,
-						GroupStart: ctx.GroupStart,
-						Pos:        ctx.Pos,
-					})
+
+				newCtx := Context{
+					State:       eps,
+					Groups:      copyGroups(ctx.Groups),
+					GroupStart:  copyGroupStarts(ctx.GroupStart),
+					GroupClosed: copyGroupClosed(ctx.GroupClosed),
+					Pos:         ctx.Pos,
 				}
+
+				for groupName, isStart := range ctx.State.GroupInfo {
+					if isStart && !ctx.GroupClosed[groupName] {
+						newCtx.GroupStart[groupName] = ctx.Pos
+					}
+				}
+				for groupName, isStart := range eps.GroupInfo {
+					if isStart && !ctx.GroupClosed[groupName] {
+						newCtx.GroupStart[groupName] = ctx.Pos
+					}
+				}
+
+				for groupName := range ctx.GroupStart {
+					if ctx.GroupClosed[groupName] {
+						continue
+					}
+
+					_, currentInGroup := ctx.State.GroupInfo[groupName]
+					_, nextInGroup := eps.GroupInfo[groupName]
+
+					if currentInGroup && !nextInGroup {
+						if start, ok := ctx.GroupStart[groupName]; ok {
+							captured := input[start:ctx.Pos]
+							//fmt.Printf("DEBUG: Группа %s захватила '%s' (позиции %d-%d)\n", groupName, captured, start, ctx.Pos)
+							newCtx.Groups[groupName] = captured
+							delete(newCtx.GroupStart, groupName)
+							newCtx.GroupClosed[groupName] = true
+						}
+					}
+				}
+
+				newContexts = append(newContexts, newCtx)
 			}
 		}
-	contexts = newContexts
+
+		sortContextsByCapturedLength(newContexts)
+
+		contexts = newContexts
+		//printContexts(contexts)
 	}
 	return false, nil
 }
 
+// Сортировка: сначала контексты с большим количеством захваченных символов
+func sortContextsByCapturedLength(contexts []Context) {
+	sort.Slice(contexts, func(i, j int) bool {
+		lenI := 0
+		lenJ := 0
+		for _, text := range contexts[i].Groups {
+			lenI += len(text)
+		}
+		for _, text := range contexts[j].Groups {
+			lenJ += len(text)
+		}
+		return lenI > lenJ
+	})
+}
+
+
+/*
+func printContexts(contexts []Context) {
+	for _, ctx := range contexts {
+		fmt.Printf("state: %d\n", ctx.State.ID)
+	}
+	fmt.Println("\n")
+}
+*/
 func copyGroups(original map[string]string) map[string]string {
 	result := make(map[string]string)
 	for k, v := range original {
@@ -288,7 +373,79 @@ func copyGroupStarts(original map[string]int) map[string]int {
 	return result
 }
 
+func copyGroupClosed(original map[string]bool) map[string]bool {
+	result := make(map[string]bool)
+	for k, v := range original {
+		result[k] = v
+	}
+	return result
+}
+
 func handleRef (ctx Context, input string, newContexts *[]Context) {
 	expectedText := ctx.Groups[ctx.State.RefGroup]
+	//fmt.Println("expected: "+expectedText)
+	if expectedText == ""{
+		return // если нет текста, то группа не захвачена
+	}
+	if ctx.Pos+len(expectedText) <= len(input) && input[ctx.Pos:ctx.Pos+len(expectedText)] == expectedText {
+		for _, epsilon := range ctx.State.Epsilons {
+			*newContexts = append(*newContexts, Context{
+				State:      epsilon,
+				Groups:     ctx.Groups,
+				GroupStart: ctx.GroupStart,
+				Pos:        ctx.Pos + len(expectedText),
+			})
+		}
+	}
+}
 
+func Compile(regex, new_regex string, n *nfa.Nfa) (*Dfa, error) {
+	is_true, groups := checkString(n, new_regex)
+	if !is_true{
+		return nil, fmt.Errorf("regex '%s' is not valid", new_regex)
+	}
+	result := regex
+	for groupName, text := range groups {
+		//fmt.Println("группа на замену: "+groupName+"\n")
+		//fmt.Println("замена на: "+text+"\n")
+
+		result = replaceFirstGroupContent(result, groupName, text)
+
+		result = strings.ReplaceAll(result, "<"+groupName+">", text)
+	}
+	fmt.Println("->  "+result)
+	newTree, ok := reg.BuildSyntaxTree(result)
+	if ok != nil {
+		return nil, ok
+	}
+	newNfa := nfa.BuildNfaFromTree(newTree)
+	n = newNfa
+	dfa, ok := BuildDfaFromNfa(newNfa)
+	if ok != nil {
+		return nil, ok
+	}
+	return dfa, nil
+}
+
+
+func replaceFirstGroupContent(regex string, groupName string, replacement string) string {
+	search := "(<" + groupName + ">"
+	startIdx := strings.Index(regex, search)
+	if startIdx == -1 {
+		return regex
+	}
+	balance := 1
+	i := startIdx + len(search)
+	for i < len(regex) && balance > 0 {
+		if regex[i] == '(' {
+			balance++
+		} else if regex[i] == ')' {
+			balance--
+		}
+		i++
+	}
+	if balance != 0 {
+		return regex
+	}
+	return regex[:startIdx] + "(" + replacement + ")" + regex[i:]
 }

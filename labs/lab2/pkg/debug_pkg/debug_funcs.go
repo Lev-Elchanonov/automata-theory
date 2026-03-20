@@ -225,3 +225,5 @@ func Print_pset(pset *dfa.Partition) {
 		fmt.Printf("\n")
 	}
 }
+
+

@@ -3,6 +3,7 @@ package dialogue
 import (
 	"bufio"
 	"fmt"
+	"lab2/pkg/debug_pkg"
 	dfa "lab2/pkg/dfa_pkg"
 	graph "lab2/pkg/graph_pkg"
 	nfa "lab2/pkg/nfa_pkg"
@@ -43,7 +44,20 @@ func Dialogue () {
 		dfaAutomaton, err := dfa.BuildDfaFromNfa(nfaAutomaton)
 		if (err != nil) {
 			fmt.Println(err)
-			continue
+			if err.Error() != "Nfa has Named Groups or references. Please inter expression before compile\n"{
+				continue
+			}
+			fmt.Println("Regex contains named groups or refs.\nEnter expression: ")
+			expr, _ := reader.ReadString('\n')
+			expr = strings.TrimSuffix(expr, "\n")
+
+
+			//debug_pkg.Print(nfaAutomaton)
+			dfaAutomaton, err = dfa.Compile(input, expr, nfaAutomaton)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
 		}
 		fmt.Println("DFA is ready!\n")
 		err = graph.SaveAndOpenGraphVizDfa(dfaAutomaton, "graphs/dfa_graph.dot")
@@ -53,6 +67,7 @@ func Dialogue () {
 
 		minimizedDfa := dfa.Minimize(dfaAutomaton)
 		fmt.Println("minDFA is ready!\n")
+		debug_pkg.DebugMinimizationProcess(dfaAutomaton)
 
 		err = graph.SaveAndOpenGraphVizDfa(minimizedDfa, "graphs/mindfa_graph.dot")
 
@@ -75,3 +90,4 @@ func Dialogue () {
 
 	}
 }
+

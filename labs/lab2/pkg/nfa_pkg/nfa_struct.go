@@ -9,6 +9,8 @@ type NfaState struct {
 	Epsilons []*NfaState
 	IsAcceptable bool
 	GroupInfo map[string]bool
+	IsRef bool
+	RefGroup string
 }
 
 type GroupInfo struct {
@@ -336,6 +338,8 @@ func buildRefNfa (node *reg.Node, nfa *Nfa) (*NfaState, *NfaState){
 	accept := nfa.addState()
 
 	start.GroupInfo["ref:"+node.Value] = true
+	start.RefGroup = node.Value
+	start.IsRef = true
 
 	start.Epsilons = append(start.Epsilons, accept) // тут мы делаем сразу e-переход к accept, но,
 	accept.IsAcceptable = true						// когда мы будем встречать ссылку на группу, то

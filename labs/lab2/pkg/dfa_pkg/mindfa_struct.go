@@ -19,7 +19,19 @@ func (p *Partition) addGroup(gr *Group) {
 	p.GroupsCount++
 }
 
+
 func Minimize(d *Dfa) *Dfa{
+	fmt.Println("\n========================================")
+	fmt.Println("НАЧАЛО МИНИМИЗАЦИИ ДКА")
+	fmt.Println("========================================")
+
+	// Выводим исходный ДКА
+	fmt.Println("\n--- Исходный ДКА ---")
+	fmt.Printf("Всего состояний: %d\n", len(d.States))
+	if d.ErrorState != nil {
+		fmt.Printf("Состояние ошибки: %d\n", d.ErrorState.ID)
+	}
+
 	pset := &Partition{
 		Groups: make(map[int]*Group),
 		GroupsCount: 0,
@@ -42,8 +54,12 @@ func Minimize(d *Dfa) *Dfa{
 
 	pset.addGroup(acceptGroup)
 	pset.addGroup(notAcceptGroup)
+	fmt.Println("\n--- ШАГ 1: НАЧАЛЬНОЕ РАЗБИЕНИЕ ---")
+	DebugPrintPartition(pset, 1)
 
+	iteration := 1
 	cont := true
+	subgroupsLen := 1
 	for cont {
 		cont = false
 		newpset := &Partition{
@@ -60,6 +76,7 @@ func Minimize(d *Dfa) *Dfa{
 			group := pset.Groups[groupID]
 			containsError := false
 
+
 			for _, state := range group.States {
 				if state == d.ErrorState {
 					containsError = true
@@ -67,6 +84,7 @@ func Minimize(d *Dfa) *Dfa{
 				}
 			}
 			if containsError {
+				fmt.Printf("\n  Группа %d (содержит ошибку) - переносится без изменений\n", groupID)
 				group.Id = newpset.GroupsCount
 				newpset.addGroup(group)
 				continue
@@ -74,15 +92,24 @@ func Minimize(d *Dfa) *Dfa{
 
 
 			if len(group.States) == 1 { // тривиальная группа
+				fmt.Printf("\n  Группа %d (тривиальная) - переносится\n", groupID)
 				group.Id = newpset.GroupsCount
 				newpset.addGroup(group)
 				continue
 			}
+
+			fmt.Printf("\n  РАЗБИЕНИЕ ГРУППЫ %d: состояния %v\n", groupID, getStateIDsFromGroup(group))
 			subgroups := splitGroup(group, d, pset)
 			cont = true
 
+			fmt.Printf("    Результат разбиения: %d подгрупп\n", len(subgroups))
+			for idx, sg := range subgroups {
+				fmt.Printf("      Подгруппа %d: %v\n", idx+1, getStateIDsFromGroup(sg))
+			}
+
 			sort.Slice(subgroups, func(i, j int) bool {
 				// получаем минимальный ID в каждой подгруппе
+				fmt.Printf("    Группа не изменилась - переносится\n")
 				minI := getMinStateID(subgroups[i])
 				minJ := getMinStateID(subgroups[j])
 				return minI < minJ
@@ -92,12 +119,100 @@ func Minimize(d *Dfa) *Dfa{
 				subgroup.Id = newpset.GroupsCount
 				newpset.addGroup(subgroup)
 			}
-			if len(subgroups) == 1 { cont = false }
+			if len(subgroups) == 1 && subgroupsLen == 1{
+				cont = false
+			}
+			subgroupsLen = len(subgroups)
+
 		}
 		pset = newpset
+		iteration++
+		fmt.Println("\n--- РАЗБИЕНИЕ ПОСЛЕ ИТЕРАЦИИ ---")
+		DebugPrintPartition(pset, iteration)
 	}
+	fmt.Println("\n========================================")
+	fmt.Println("МИНИМИЗАЦИЯ ЗАВЕРШЕНА")
+	fmt.Println("========================================")
+	fmt.Println("\n--- ФИНАЛЬНОЕ РАЗБИЕНИЕ ---")
+	DebugPrintPartition(pset, iteration)
+
 	return buildMinimizedDFA(d, pset)
 }
+
+
+func DebugPrintPartition(p *Partition, step int) {
+	fmt.Printf("\n=== Шаг %d: Разбиение ===\n", step)
+	fmt.Printf("Всего групп: %d\n", p.GroupsCount)
+
+	groups := make([]*Group, 0, len(p.Groups))
+	for _, group := range p.Groups {
+		groups = append(groups, group)
+	}
+	sort.Slice(groups, func(i, j int) bool { return groups[i].Id < groups[j].Id })
+
+	for _, group := range groups {
+
+		stateIDs := make([]int, 0, len(group.States))
+		for id := range group.States {
+			stateIDs = append(stateIDs, id)
+		}
+		sort.Ints(stateIDs)
+
+
+		statesStr := fmt.Sprintf("%v", stateIDs)
+		fmt.Printf("  Группа %2d: %s\n", group.Id, statesStr)
+	}
+}
+
+
+func DebugMinimizationProcess(d *Dfa) {
+	fmt.Println("\n=== ПРОЦЕСС МИНИМИЗАЦИИ ДКА ===")
+
+	fmt.Println("\n--- Шаг 1: Начальное разбиение ---")
+	acceptIDs := make([]int, 0, len(d.AcceptStates))
+	for _, state := range d.AcceptStates {
+		acceptIDs = append(acceptIDs, state.ID)
+	}
+	sort.Ints(acceptIDs)
+	fmt.Printf("Принимающие состояния: %v\n", acceptIDs)
+
+	nonAcceptIDs := make([]int, 0)
+	for _, state := range d.States {
+		if !state.IsAcceptable && state != d.ErrorState {
+			nonAcceptIDs = append(nonAcceptIDs, state.ID)
+		}
+	}
+	sort.Ints(nonAcceptIDs)
+	fmt.Printf("Непринимающие состояния: %v\n", nonAcceptIDs)
+
+	if d.ErrorState != nil {
+		fmt.Printf("Состояние ошибки: %d\n", d.ErrorState.ID)
+	}
+}
+
+
+func Print_pset(pset *Partition) {
+	for _, group := range pset.Groups {
+		fmt.Printf("->%d: ", group.Id)
+		for _, state := range group.States {
+			fmt.Printf("%d,", state.ID)
+		}
+		fmt.Printf("\n")
+	}
+}
+
+
+
+
+func getStateIDsFromGroup(group *Group) []int {
+	ids := make([]int, 0, len(group.States))
+	for id := range group.States {
+		ids = append(ids, id)
+	}
+	sort.Ints(ids)
+	return ids
+}
+
 
 func getMinStateID(group *Group) int {
 	minID := int(^uint(0) >> 1)
@@ -136,25 +251,29 @@ func findGroup(curState *DfaState, pset *Partition) *Group{
 // разбивка группы
 func splitGroup(group *Group, d *Dfa, pset *Partition) []*Group {
 	signMap := make(map[string][]*DfaState) // мапа название новой группировки -> массив перейденных в нее состояний
-
+	fmt.Printf("    Подробная отладка splitGroup:\n")
 	for _, state := range group.States {
 		sig := make(map[byte]int) // карта отображения символ - id группы перехода
-
+		fmt.Printf("      Состояние %d:\n", state.ID)
 		for _, symbol := range d.Alphabet {
 			nextState := state.Transitions[symbol]
 			if nextState != nil {
 				foundedGroup := findGroup(nextState, pset) // группа, которой принадлежит найденное состояние
 				if foundedGroup != nil {
 					sig[symbol] = foundedGroup.Id
+					fmt.Printf("        '%c' -> состояние %d (группа %d)\n", symbol, nextState.ID, foundedGroup.Id)
 				} else {
 					sig[symbol] = -1
+					fmt.Printf("        '%c' -> состояние %d (группа не найдена)\n", symbol, nextState.ID)
 				}
 			} else {
 				sig[symbol] = -1
+				fmt.Printf("        '%c' -> нет перехода\n", symbol)
 			}
 		}
 
 		key := signKey(sig, d.Alphabet)
+		fmt.Printf("        Сигнатура: %s\n", key)
 		signMap[key] = append(signMap[key], state)
 	}
 
