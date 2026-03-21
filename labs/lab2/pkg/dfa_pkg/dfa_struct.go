@@ -413,7 +413,7 @@ func Compile(regex, new_regex string, n *nfa.Nfa) (*Dfa, error) {
 
 		result = strings.ReplaceAll(result, "<"+groupName+">", text)
 	}
-	fmt.Println("->  "+result)
+	//fmt.Println("->  "+result)
 	newTree, ok := reg.BuildSyntaxTree(result)
 	if ok != nil {
 		return nil, ok
@@ -424,7 +424,11 @@ func Compile(regex, new_regex string, n *nfa.Nfa) (*Dfa, error) {
 	if ok != nil {
 		return nil, ok
 	}
-	return dfa, nil
+	minDfa := Minimize(dfa)
+	if minDfa == nil {
+		return nil, fmt.Errorf("Minimize dfa fail\n")
+	}
+	return minDfa, nil
 }
 
 

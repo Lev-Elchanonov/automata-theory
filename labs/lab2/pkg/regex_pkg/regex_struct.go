@@ -377,11 +377,11 @@ func braceWork (delta, i int, regex *string, is_open *bool, name *string, endNam
 }
 
 func processDefault(ch byte, i int, regex *string, tree *SyntaxTree, stack *[]interface{}) (int) {
-	if ch == '%' && i+2 < len(*regex) && i+2 < len(*regex) && (*regex)[i+2] == '%' {
+	if ch == '%' && i+2 < len(*regex) && (*regex)[i+2] == '%' {
 		leafNode := createLeafNode(string((*regex)[i+1]), tree)
 		*stack = append(*stack, leafNode)
 		i += 2
-	} else if !isMeta(ch) {
+	} else if !isMeta(ch) || commonDot(ch, *regex, i) {
 		leafNode := createLeafNode(string(ch), tree)
 		*stack = append(*stack, leafNode)
 	} else if isMeta(ch) {
@@ -390,7 +390,18 @@ func processDefault(ch byte, i int, regex *string, tree *SyntaxTree, stack *[]in
 	return i
 }
 
-
+func commonDot (ch byte, regex string, index int) bool {
+	if ch == '.' && index + 1 == len(regex) ||
+		ch == '.' && index + 2 == len(regex) && regex[index+1] == '.' ||
+		ch == '.' && index+2 < len(regex) && regex[index+1] == '.' && regex[index+2] != '.' ||
+		ch == '.' && index+1 < len(regex) && regex[index+1] != '.'{
+		return true
+	}
+	if index + 2 < len(regex) && regex[index] == '.' && regex[index + 1] == '.' && regex[index + 2] != '.' {
+		return false
+	}
+	return false
+}
 // -- проверки на скоупы для ссылок
 
 func (tree* SyntaxTree) validateScopes() error {

@@ -28,12 +28,12 @@ func Dialogue () {
 			fmt.Println(err)
 			continue
 		}
-		fmt.Println("Syntax tree is ready!\n")
+		fmt.Println("Syntax tree is ready!")
 		reader.ReadString('\n')
 
 
 		nfaAutomaton := nfa.BuildNfaFromTree(tree)
-		fmt.Println("NFA is ready!\n")
+		fmt.Println("NFA is ready!")
 		graph.SaveAndOpenGraphVizNfa(nfaAutomaton, "graphs/nfa_graph.dot")
 
 
@@ -58,14 +58,14 @@ func Dialogue () {
 				return
 			}
 		}
-		fmt.Println("DFA is ready!\n")
+		fmt.Println("DFA is ready!")
 		err = graph.SaveAndOpenGraphVizDfa(dfaAutomaton, "graphs/dfa_graph.dot")
 
 		reader.ReadString('\n')
 
 
 		minimizedDfa := dfa.Minimize(dfaAutomaton)
-		fmt.Println("minDFA is ready!\n")
+		fmt.Println("minDFA is ready!")
 
 
 		err = graph.SaveAndOpenGraphVizDfa(minimizedDfa, "graphs/mindfa_graph.dot")
@@ -77,9 +77,9 @@ func Dialogue () {
 			str = strings.TrimSuffix(str, "\n")
 			res := minimizedDfa.CheckString(str)
 			if res {
-				fmt.Println("SUCCESS\n")
+				fmt.Println("SUCCESS")
 			} else {
-				fmt.Println("FAILURE\n")
+				fmt.Println("FAILURE")
 			}
 			input, err = reader.ReadString('\n')
 			if input == "\n" {

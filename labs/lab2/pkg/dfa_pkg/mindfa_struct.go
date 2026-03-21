@@ -2,6 +2,8 @@ package dfa
 
 import (
 	"fmt"
+	nfa "lab2/pkg/nfa_pkg"
+	"lab2/pkg/regex_pkg"
 	"sort"
 	"strings"
 )
@@ -301,3 +303,27 @@ func (d *Dfa) CheckString(exp string) bool {
 	}
 	return currentState.IsAcceptable
 }
+
+
+
+
+func BuildDfa(expression string) (*Dfa, error){
+	Tree, err := regex_pkg.BuildSyntaxTree(expression)
+	if err != nil {
+		return nil, err
+	}
+	Nfa := nfa.BuildNfaFromTree(Tree)
+	if Nfa == nil {
+		return nil, fmt.Errorf("Cant build Nfa\n")
+	}
+	df, err := BuildDfaFromNfa(Nfa)
+	if err != nil {
+		return nil, err
+	}
+	minDf := Minimize(df)
+	if minDf == nil {
+		return nil, fmt.Errorf("Cant minimize Dfa\n")
+	}
+	return minDf, nil
+}
+
