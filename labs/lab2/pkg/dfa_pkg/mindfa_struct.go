@@ -289,10 +289,10 @@ func buildMinimizedDFA(oldDfa *Dfa, partition *Partition) *Dfa {
 }
 
 
-func (d *Dfa) CheckString(exp string) bool {
-	if d.StartState == nil { return false }
+func (this *Dfa) CheckString(exp string) bool {
+	if this.StartState == nil { return false }
 
-	currentState := d.StartState
+	currentState := this.StartState
 
 	for i := 0; i < len(exp); i++{
 		nextState := currentState.Transitions[exp[i]]

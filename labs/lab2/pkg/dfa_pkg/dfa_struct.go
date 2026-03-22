@@ -100,10 +100,10 @@ func BuildDfaFromNfa(n *nfa.Nfa) (*Dfa, error){
 }
 
 
-func (d* Dfa) addState(nfast map[int]*nfa.NfaState) *DfaState{
-	d.StateCount++
-	state := newDfaState(d.StateCount, nfast)
-	d.States = append(d.States, state)
+func (this * Dfa) addState(nfast map[int]*nfa.NfaState) *DfaState{
+	this.StateCount++
+	state := newDfaState(this.StateCount, nfast)
+	this.States = append(this.States, state)
 	return state
 }
 
