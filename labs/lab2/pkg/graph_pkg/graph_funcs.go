@@ -128,18 +128,6 @@ func GraphVizDfa(d *dfa.Dfa) string {
 					state.ID, target.ID, label))
 			}
 		}
-		if len(state.GroupInfo) > 0 {
-			groupLabels := make([]string, 0)
-			for groupName, isStart := range state.GroupInfo {
-				if isStart {
-					groupLabels = append(groupLabels, fmt.Sprintf("start:%s", groupName))
-				} else {
-					groupLabels = append(groupLabels, groupName)
-				}
-			}
-			builder.WriteString(fmt.Sprintf("  %d [xlabel=\"%s\"];\n",
-				state.ID, strings.Join(groupLabels, ", ")))
-		}
 	}
 
 	builder.WriteString("}\n")

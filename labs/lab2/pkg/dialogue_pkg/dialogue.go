@@ -5,7 +5,6 @@ import (
 	"fmt"
 	dfa "lab2/pkg/dfa_pkg"
 	graph "lab2/pkg/graph_pkg"
-	"lab2/pkg/kpath_pkg"
 	nfa "lab2/pkg/nfa_pkg"
 	reg "lab2/pkg/regex_pkg"
 	"os"
@@ -73,13 +72,16 @@ func Dialogue () {
 
 		reader.ReadString('\n')
 
+		/*
 		ExprFromDfa, err := kpath_pkg.BuildRegexFromDFA(minimizedDfa)
 		if err != nil {
 			fmt.Println(err)
 		}
 
 		fmt.Printf("Regex expression: %s\n", ExprFromDfa)
-
+		*/
+		inverted := minimizedDfa.Invert()
+		err = graph.SaveAndOpenGraphVizDfa(inverted, "graphs/mindfa_inverted_graph.dot")
 		reader.ReadString('\n')
 		for {
 			fmt.Println("Inter string for check: ")

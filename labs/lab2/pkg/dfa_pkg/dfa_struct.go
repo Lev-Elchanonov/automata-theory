@@ -14,7 +14,7 @@ type DfaState struct {
 	NfaStates map[int]*nfa.NfaState
 	Transitions map[byte]*DfaState
 	IsAcceptable bool
-	GroupInfo map[string]bool
+
 }
 
 type Dfa struct {
@@ -32,7 +32,6 @@ func newDfaState(id int, nfastates map[int]*nfa.NfaState) *DfaState {
 		NfaStates : nfastates,
 		Transitions : make(map[byte]*DfaState),
 		IsAcceptable : false,
-		GroupInfo : make(map[string]bool),
 	}
 }
 
