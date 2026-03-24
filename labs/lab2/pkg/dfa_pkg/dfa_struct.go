@@ -14,7 +14,7 @@ type DfaState struct {
 	NfaStates map[int]*nfa.NfaState
 	Transitions map[byte]*DfaState
 	IsAcceptable bool
-
+	Name string
 }
 
 type Dfa struct {

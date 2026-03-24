@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"strconv"
 	"strings"
 )
 
@@ -90,6 +91,63 @@ func SaveAndOpenGraphVizNfa(n *nfa.Nfa, filename string) error {
 
 
 
+/*
+func GraphVizDfa(d *dfa.Dfa) string {
+	var builder strings.Builder
+
+	builder.WriteString("digraph DFA {\n")
+	builder.WriteString("  rankdir=LR;\n")  // слева направо
+	builder.WriteString("  node [shape = circle];\n")
+
+	builder.WriteString(fmt.Sprintf("  start [shape = point, label = \"\"];\n"))
+	builder.WriteString(fmt.Sprintf("  start -> %d;\n", d.StartState.ID))
+
+
+	for _, state := range d.AcceptStates {
+		if state.Name == ""{
+			builder.WriteString(fmt.Sprintf("  %d [shape = doublecircle];\n", state.ID))
+		} else {
+			builder.WriteString(fmt.Sprintf("  %s [shape = doublecircle];\n", getNumber(state.Name)))
+		}
+	}
+
+	if d.ErrorState != nil {
+		builder.WriteString(fmt.Sprintf("  %d [shape = circle, style = dashed, label = \"{}\"];\n",
+			d.ErrorState.ID))
+	}
+
+	for _, state := range d.States {
+		for ch, target := range state.Transitions {
+			label := string(ch)
+			if ch == '"' {
+				label = "\\\""
+			} else if ch == '\\' {
+				label = "\\\\"
+			}
+
+			if target == d.ErrorState {
+				if state.Name == ""{
+					builder.WriteString(fmt.Sprintf("  %d -> %d [label = \"%s\"];\n",
+						state.ID, target.ID, label))
+				} else {
+					builder.WriteString(fmt.Sprintf("  %d -> %d [label = \"%s\"];\n", getNumber(state.Name), getNumber(target.Name), label))
+				}
+
+			} else {
+				if state.Name == "" {
+					builder.WriteString(fmt.Sprintf("  %d -> %d [label = \"%s\"];\n",
+						state.ID, target.ID, label))
+				} else {
+					builder.WriteString(fmt.Sprintf("  %d -> %d [label = \"%s\"];\n", getNumber(state.Name), getNumber(target.Name), label))
+				}
+			}
+		}
+	}
+
+	builder.WriteString("}\n")
+	return builder.String()
+}
+*/
 
 func GraphVizDfa(d *dfa.Dfa) string {
 	var builder strings.Builder
@@ -134,6 +192,11 @@ func GraphVizDfa(d *dfa.Dfa) string {
 	return builder.String()
 }
 
+func getNumber(name string) (int) {
+	cleaned := strings.ReplaceAll(name, "|", "0")
+	res, _ := strconv.Atoi(cleaned)
+	return res
+}
 
 func openFile(filename string) error {
 	var cmd *exec.Cmd
@@ -173,7 +236,7 @@ func SaveAndOpenGraphVizDfa(d *dfa.Dfa, filename string) error {
 	}
 	fmt.Printf("PNG файл создан: %s\n", pngFilename)
 
-
 	return openFile(pngFilename)
 }
+
 

@@ -5,100 +5,124 @@ import (
 	"fmt"
 	dfa "lab2/pkg/dfa_pkg"
 	graph "lab2/pkg/graph_pkg"
-	nfa "lab2/pkg/nfa_pkg"
-	reg "lab2/pkg/regex_pkg"
+	kp "lab2/pkg/kpath_pkg"
 	"os"
+	"strconv"
 	"strings"
 )
 
 func Dialogue () {
 	reader := bufio.NewReader(os.Stdin)
-
+	var automata *dfa.Dfa
 	for {
-		fmt.Println("Input regex: ")
+		printInfo()
+		fmt.Print("> ")
 		input, err := reader.ReadString('\n')
-		input = strings.TrimSuffix(input, "\n")
-		if err != nil {
-			continue
-		}
+		if err != nil {fmt.Println(err); return }
 
+		input = strings.TrimSpace(input)
+		value, err := strconv.Atoi(input)
+		if err != nil {fmt.Println(err); continue}
 
-		tree, err := reg.BuildSyntaxTree(input)
-		if (err != nil) {
-			fmt.Println(err)
-			continue
-		}
-		fmt.Println("Syntax tree is ready!")
-		reader.ReadString('\n')
-
-
-		nfaAutomaton := nfa.BuildNfaFromTree(tree)
-		fmt.Println("NFA is ready!")
-		graph.SaveAndOpenGraphVizNfa(nfaAutomaton, "graphs/nfa_graph.dot")
-
-
-		reader.ReadString('\n')
-
-
-		dfaAutomaton, err := dfa.BuildDfaFromNfa(nfaAutomaton)
-		if (err != nil) {
-			fmt.Println(err)
-			if err.Error() != "Nfa has Named Groups or references. Please inter expression before compile\n"{
-				continue
+		if value == 9 {return}
+		switch value {
+		case 1:
+			automata, err = case1(*reader)
+			if err != nil {fmt.Println(err); return}
+			err = graph.SaveAndOpenGraphVizDfa(automata, "graphs/dfa.dot")
+			if err != nil {fmt.Println(err); return}
+			break
+		case 2:
+			fmt.Println("In work:D\n")
+			break
+		case 3:
+			if automata == nil {
+				automata, err = case1(*reader)
+				if err != nil {fmt.Println(err); return}
 			}
-			fmt.Println("Regex contains named groups or refs.\nEnter expression: ")
-			expr, _ := reader.ReadString('\n')
-			expr = strings.TrimSuffix(expr, "\n")
-
-
-			//debug_pkg.Print(nfaAutomaton)
-			dfaAutomaton, err = dfa.Compile(input, expr, nfaAutomaton)
-			if err != nil {
-				fmt.Println(err)
-				return
+			invertedDfa := automata.Invert()
+			err = graph.SaveAndOpenGraphVizDfa(invertedDfa, "graphs/inverted.dot")
+			if err != nil {fmt.Println(err); return}
+			automata = invertedDfa
+			break
+		case 4:
+			if automata == nil {
+				automata, err = case1(*reader)
+				if err != nil {fmt.Println(err); return}
 			}
-		}
-		fmt.Println("DFA is ready!")
-		err = graph.SaveAndOpenGraphVizDfa(dfaAutomaton, "graphs/dfa_graph.dot")
-
-		reader.ReadString('\n')
-
-
-		minimizedDfa := dfa.Minimize(dfaAutomaton)
-		fmt.Println("minDFA is ready!")
-
-
-		err = graph.SaveAndOpenGraphVizDfa(minimizedDfa, "graphs/mindfa_graph.dot")
-
-		reader.ReadString('\n')
-
-		/*
-		ExprFromDfa, err := kpath_pkg.BuildRegexFromDFA(minimizedDfa)
-		if err != nil {
-			fmt.Println(err)
-		}
-
-		fmt.Printf("Regex expression: %s\n", ExprFromDfa)
-		*/
-		inverted := minimizedDfa.Invert()
-		err = graph.SaveAndOpenGraphVizDfa(inverted, "graphs/mindfa_inverted_graph.dot")
-		reader.ReadString('\n')
-		for {
-			fmt.Println("Inter string for check: ")
-			str,_ := reader.ReadString('\n')
-			str = strings.TrimSuffix(str, "\n")
-			res := minimizedDfa.CheckString(str)
-			if res {
-				fmt.Println("SUCCESS")
-			} else {
-				fmt.Println("FAILURE")
+			reversedDfa := automata.Reverse()
+			err = graph.SaveAndOpenGraphVizDfa(reversedDfa, "graphs/reversed.dot")
+			if err != nil {fmt.Println(err); return}
+			automata = reversedDfa
+			break
+		case 5:
+			if automata == nil {
+				automata, err = case1(*reader)
+				if err != nil {fmt.Println(err); return}
 			}
-			input, err = reader.ReadString('\n')
-			if input == "\n" {
-				break
+			automata2, err := case1(*reader)
+			if err != nil {fmt.Println(err); return}
+			result := dfa.Composition(automata, automata2)
+			if result == nil {return}
+			err = graph.SaveAndOpenGraphVizDfa(result, "graphs/composition.dot")
+			automata = result
+			break
+		case 6:
+			if automata == nil {
+				automata, err = case1(*reader)
+				if err != nil {fmt.Println(err); return}
 			}
+			automata2, err := case1(*reader)
+			if err != nil {fmt.Println(err); return}
+			result := dfa.Difference(automata, automata2)
+			if result == nil {return}
+			err = graph.SaveAndOpenGraphVizDfa(result, "graphs/difference.dot")
+			if err != nil {fmt.Println(err); return}
+			automata = result
+			break
+		case 7:
+			if automata == nil {
+				automata, err = case1(*reader)
+				if err != nil {fmt.Println(err); return}
+			}
+			reg, err := kp.BuildRegexFromDFA(automata)
+			if err != nil {fmt.Println(err); return}
+			fmt.Printf("\tRegex: %s", reg)
+			fmt.Printf("\n")
+			break
+		case 8:
+			automata = nil
+			break
+		default:
+			fmt.Println("Invalid value: ", value)
 		}
-
 	}
 }
 
+func case1(reader bufio.Reader) (*dfa.Dfa, error) {
+	fmt.Printf("Enter regex: ")
+	str, err := reader.ReadString('\n')
+	str = strings.TrimSpace(str)
+	if err != nil {
+		fmt.Println(err);
+		return nil, err
+	}
+	automata, err := dfa.BuildDfa(str)
+	if err != nil {
+		fmt.Println(err);
+		return nil, err
+	}
+	return automata, nil
+}
+
+func printInfo() {
+	fmt.Println("1: Build DFA")
+	fmt.Println("2: Search menu")
+	fmt.Println("3: Invert DFA")
+	fmt.Println("4: Reverse DFA")
+	fmt.Println("5: Composition")
+	fmt.Println("6: Difference")
+	fmt.Println("7: K-path")
+	fmt.Println("8: Clear DFA")
+	fmt.Println("9: Exit")
+}

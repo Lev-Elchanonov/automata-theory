@@ -44,7 +44,7 @@ func newNfaState(id int) *NfaState {
 	}
 }
 
-func newNfa() *Nfa{
+func NewNfa() *Nfa{
 	return &Nfa{
 		States: make([]*NfaState, 0),
 		StateCount: 0,
@@ -54,7 +54,7 @@ func newNfa() *Nfa{
 }
 
 
-func (n* Nfa) addState() *NfaState {
+func (n* Nfa) AddState() *NfaState {
 	n.StateCount++
 	state := newNfaState(n.StateCount)
 	n.States = append(n.States, state)
@@ -63,7 +63,7 @@ func (n* Nfa) addState() *NfaState {
 
 
 func BuildNfaFromTree (tree *reg.SyntaxTree) *Nfa {
-	nfa := newNfa()
+	nfa := NewNfa()
 
 	collectGroups(nfa, tree.Root, &nfa.Groups) // сбор инфы о группах захвата
 
@@ -119,16 +119,16 @@ func buildNfaFromNode(node *reg.Node, nfa *Nfa) (*NfaState, *NfaState){
 }
 
 func buildEpsilonNfa (nfa *Nfa) (*NfaState, *NfaState){
-	start := nfa.addState()
-	accept := nfa.addState()
+	start := nfa.AddState()
+	accept := nfa.AddState()
 	start.Epsilons = append(start.Epsilons, accept)
 	accept.IsAcceptable = true
 	return start, accept
 }
 
 func buildLeafNfa(node *reg.Node, nfa *Nfa) (*NfaState, *NfaState){
-	start := nfa.addState()
-	accept := nfa.addState()
+	start := nfa.AddState()
+	accept := nfa.AddState()
 	if node.Value == "epsilon"{
 		start.Epsilons = append(start.Epsilons, accept)
 	} else {
@@ -149,8 +149,8 @@ func buildConcatNfa (node *reg.Node, nfa *Nfa) (*NfaState, *NfaState){
 }
 
 func buildUnionNfa(node* reg.Node, nfa *Nfa) (*NfaState, *NfaState){
-	newStart := nfa.addState()
-	newAccept := nfa.addState()
+	newStart := nfa.AddState()
+	newAccept := nfa.AddState()
 
 	leftStart, leftAccept := buildNfaFromNode(node.Left, nfa)
 	rightStart, rightAccept := buildNfaFromNode(node.Right, nfa)
@@ -168,8 +168,8 @@ func buildUnionNfa(node* reg.Node, nfa *Nfa) (*NfaState, *NfaState){
 }
 
 func buildKliniNfa(node *reg.Node, nfa *Nfa) (*NfaState, *NfaState){
-	newStart := nfa.addState()
-	newAccept := nfa.addState()
+	newStart := nfa.AddState()
+	newAccept := nfa.AddState()
 	newAccept.IsAcceptable = true
 
 	nodeStart, nodeAccept := buildNfaFromNode(node.Left, nfa)
@@ -182,8 +182,8 @@ func buildKliniNfa(node *reg.Node, nfa *Nfa) (*NfaState, *NfaState){
 }
 
 func buildQuestionNfa (node *reg.Node, nfa *Nfa) (*NfaState, *NfaState){ // eps|r
-	newStart := nfa.addState()
-	newAccept := nfa.addState()
+	newStart := nfa.AddState()
+	newAccept := nfa.AddState()
 	newAccept.IsAcceptable = true
 
 	nodeStart, nodeAccept := buildNfaFromNode(node.Left, nfa)
@@ -202,7 +202,7 @@ func buildRepeatNfa(node *reg.Node, nfa *Nfa) (*NfaState, *NfaState) {
 		return buildNfaFromNode(node.Left, nfa)
 	}
 
-	templateNfa := newNfa()
+	templateNfa := NewNfa()
 	templateStart, templateAccept := buildNfaFromNode(node.Left, templateNfa)
 
 	templateStates := make(map[*NfaState]bool)
@@ -266,7 +266,7 @@ func importTemplate(templateStart, templateAccept *NfaState, targetNfa *Nfa,
 	stateMap := make(map[*NfaState]*NfaState)
 
 	for oldState := range templateStates {
-		newState := targetNfa.addState()
+		newState := targetNfa.AddState()
 		stateMap[oldState] = newState
 	}
 
@@ -334,8 +334,8 @@ func markGroupStates(start, startState *NfaState, groupName string) {
 }
 
 func buildRefNfa (node *reg.Node, nfa *Nfa) (*NfaState, *NfaState){
-	start := nfa.addState()
-	accept := nfa.addState()
+	start := nfa.AddState()
+	accept := nfa.AddState()
 
 	start.GroupInfo["ref:"+node.Value] = true
 	start.RefGroup = node.Value
