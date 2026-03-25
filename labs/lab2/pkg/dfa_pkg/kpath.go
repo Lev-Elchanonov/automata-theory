@@ -2,6 +2,7 @@ package dfa
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -21,12 +22,12 @@ func NewRegexBuilder(d *Dfa) *RegexBuilder {
 			states = append(states, state)
 		}
 	}
-	/*
+
 	sort.Slice(states, func(i, j int) bool {
 		return states[i].ID < states[j].ID
 	})
 
-	 */
+
 	stateIndex := make(map[*DfaState]int)
 	indexState := make(map[int]*DfaState)
 	count := 1
@@ -83,7 +84,6 @@ func (this *RegexBuilder) BuildRegex() (string, error) {
 
 			}
 		}
-		this.print(R, k)
 	}
 
 	startInd := this.stateIndex[this.d.StartState]
@@ -120,16 +120,6 @@ func (this *RegexBuilder) calculateBasis(i, j int) string {
 	return result
 }
 
-func (this *RegexBuilder) print(R [][][]string, k int) {
-	fmt.Printf("=== k=%d ===\n", k)
-	for i := 1; i <= this.n; i++ {
-		for j := 1; j <= this.n; j++ {
-			if R[i][j][k] != "" && R[i][j][k] != "∅" {
-				fmt.Printf("R[%d][%d][%d] = %s\n", i, j, k, R[i][j][k])
-			}
-		}
-	}
-}
 
 func (this *RegexBuilder) makeUnion(str1 string, str2 string) string {
 	if str1 == "" || str1 == "∅"{
@@ -149,10 +139,8 @@ func (this *RegexBuilder) makeUnion(str1 string, str2 string) string {
 		return str1
 	}
 
-	str1 = this.addPars(str1)
-	str2 = this.addPars(str2)
 
-	return str1 + "|" + str2
+	return "(" + "(" + str1 + ")" + "|" + "(" + str2 + ")" + ")"
 }
 
 func (this *RegexBuilder) makeConcat(str1, str2 string) string {
@@ -166,12 +154,9 @@ func (this *RegexBuilder) makeConcat(str1, str2 string) string {
 		return str1
 	}
 
-	str1 = this.addPars(str1)
-	str2 = this.addPars(str2)
+
 	return "(" + str1 + ")" + "(" + str2 + ")"
 }
-
-
 
 
 
@@ -186,26 +171,12 @@ func (this *RegexBuilder) makeKlini(str string) string {
 	if strings.HasPrefix(str, "(") && strings.HasSuffix(str, ")..."){
 		return str
 	}
-	str = this.addPars(str)
-	return str + "..."
+
+	return "(" + "(" + str + ")" + "..." + ")"
 }
 
 
-func (this *RegexBuilder) addPars(str string) string {
-	if strings.HasPrefix(str, "(") && strings.HasSuffix(str, ")") {
-		return str
-	}
-	if len(str) == 1 || str == "ε" {
-		return str
-	}
-	if strings.HasSuffix(str, "...") {
-		return str
-	}
-	if strings.Contains(str, "|") {
-		return "(" + str + ")"
-	}
-	return str
-}
+
 
 func escapeSymbol(symbol byte) string {
 	switch symbol {
@@ -233,22 +204,6 @@ func (this *RegexBuilder) containsEpsilon(s string) bool {
 }
 
 func (this *RegexBuilder) simplify(expr string) string {
-	if strings.Contains(expr, "|") {
-		parts := strings.Split(expr, "|")
-		clean := make([]string, 0, len(parts))
-		for _, p := range parts {
-			if p != "∅" {
-				clean = append(clean, p)
-			}
-		}
-		if len(clean) == 1 {
-			expr = clean[0]
-		} else if len(clean) > 1 {
-			expr = strings.Join(clean, "|")
-		} else {
-			expr = "∅"
-		}
-	}
 
 	// Убираем ε из конкатенаций
 	expr = this.removeEpsilons(expr)
@@ -265,12 +220,7 @@ func (this *RegexBuilder) removeEpsilons(regex string) string {
 	return result
 }
 
-func (rb *RegexBuilder) removeEpsilonFromConcat(expr string) string {
-	if !strings.Contains(expr, ".") && !strings.Contains(expr, "(") {
-		return expr
-	}
-	return expr
-}
+
 
 
 func BuildRegexFromDFA(d *Dfa) (string, error) {

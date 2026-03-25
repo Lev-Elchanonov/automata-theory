@@ -25,7 +25,7 @@ func Dialogue () {
 		value, err := strconv.Atoi(input)
 		if err != nil {fmt.Println(err); continue}
 
-		if value == 9 {return}
+		if value == 8 {return}
 		switch value {
 		case 1:
 			automataDfa, automataNfa, err = case1(*reader)
@@ -74,26 +74,6 @@ func Dialogue () {
 				automataDfa, automataNfa, err = case1(*reader)
 				if err != nil {fmt.Println(err); return}
 				if automataDfa == nil && automataNfa != nil {
-					fmt.Println("\t> Cant execute composition on NFA")
-					break
-				}
-			}
-			automata2Dfa, automata2Nfa, err := case1(*reader)
-			if err != nil {fmt.Println(err); return}
-			if automata2Dfa == nil && automata2Nfa != nil {
-				fmt.Println("\t> Cant execute composition on NFA")
-				break
-			}
-			result := dfa.Composition(automataDfa, automata2Dfa)
-			if result == nil {return}
-			err = graph.SaveAndOpenGraphVizDfa(result, "graphs/composition.dot")
-			automataDfa = result
-			break
-		case 6:
-			if automataDfa == nil {
-				automataDfa, automataNfa, err = case1(*reader)
-				if err != nil {fmt.Println(err); return}
-				if automataDfa == nil && automataNfa != nil {
 					fmt.Println("\t> Cant execute difference on NFA")
 					break
 				}
@@ -110,7 +90,7 @@ func Dialogue () {
 			if err != nil {fmt.Println(err); return}
 			automataDfa = result
 			break
-		case 7:
+		case 6:
 			if automataDfa == nil {
 				automataDfa, automataNfa, err = case1(*reader)
 				if err != nil {fmt.Println(err); return}
@@ -123,7 +103,7 @@ func Dialogue () {
 			fmt.Printf("\tRegex: %s", reg)
 			fmt.Printf("\n")
 			break
-		case 8:
+		case 7:
 			automataDfa = nil
 			automataNfa = nil
 			break
@@ -154,9 +134,8 @@ func printInfo() {
 	fmt.Println("2: Search menu")
 	fmt.Println("3: Invert DFA")
 	fmt.Println("4: Reverse DFA")
-	fmt.Println("5: Composition")
-	fmt.Println("6: Difference")
-	fmt.Println("7: K-path")
-	fmt.Println("8: Clear")
-	fmt.Println("9: Exit")
+	fmt.Println("5: Difference")
+	fmt.Println("6: K-path")
+	fmt.Println("7: Clear")
+	fmt.Println("8: Exit")
 }

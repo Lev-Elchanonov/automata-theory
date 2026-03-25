@@ -279,22 +279,6 @@ func buildMinimizedDFA(oldDfa *Dfa, partition *Partition) *Dfa {
 }
 
 
-func (this *Dfa) CheckString(exp string) bool {
-	if this.StartState == nil { return false }
-
-	currentState := this.StartState
-
-	for i := 0; i < len(exp); i++{
-		nextState := currentState.Transitions[exp[i]]
-		if nextState == nil || nextState.ID == -1 {
-			return false
-		}
-		currentState = nextState
-	}
-	return currentState.IsAcceptable
-}
-
-
 
 
 func BuildDfa(expression string) (*Dfa, *nfa.Nfa, error){

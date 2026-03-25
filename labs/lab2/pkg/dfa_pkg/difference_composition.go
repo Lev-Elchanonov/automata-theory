@@ -12,15 +12,13 @@ type ProductState struct {
 }
 
 func Difference(firstDfa, secondDfa *Dfa) *Dfa {
-	return mainCycle(firstDfa, secondDfa, true)
-}
-
-func Composition(firstDfa, secondDfa *Dfa) *Dfa {
-	return mainCycle(firstDfa, secondDfa, false)
+	return mainCycle(firstDfa, secondDfa)
 }
 
 
-func mainCycle (first, second *Dfa, buildDifference bool) *Dfa {
+
+
+func mainCycle (first, second *Dfa) *Dfa {
 	newAlphabet := mergeAlphabets(first.Alphabet, second.Alphabet)
 
 	result := &Dfa{
@@ -44,17 +42,12 @@ func mainCycle (first, second *Dfa, buildDifference bool) *Dfa {
 	stateMap[queue[0]] = startState
 	result.StartState = startState
 
-	if buildDifference { // РАЗНОСТЬ
-		if queue[0].State1.IsAcceptable && !queue[0].State2.IsAcceptable {
-			startState.IsAcceptable = true
-			result.AcceptStates = append(result.AcceptStates, startState)
-		}
-	} else { // КОМПОЗИЦИЯ
-		if queue[0].State1.IsAcceptable && queue[0].State2.IsAcceptable {
-			startState.IsAcceptable = true
-			result.AcceptStates = append(result.AcceptStates, startState)
-		}
+
+	if queue[0].State1.IsAcceptable && !queue[0].State2.IsAcceptable {
+		startState.IsAcceptable = true
+		result.AcceptStates = append(result.AcceptStates, startState)
 	}
+
 
 	for len(queue) > 0{
 		current := queue[0]
@@ -83,17 +76,11 @@ func mainCycle (first, second *Dfa, buildDifference bool) *Dfa {
 					nextState = result.addProductState(&nextPair)
 					stateMap[nextPair] = nextState
 					queue = append(queue, nextPair)
-					if buildDifference { // РАЗНОСТЬ
-						if nextPair.State1.IsAcceptable && !nextPair.State2.IsAcceptable {
-							nextState.IsAcceptable = true
-							result.AcceptStates = append(result.AcceptStates, nextState)
-						}
-					} else { // КОМПОЗИЦИЯ
-						if nextPair.State1.IsAcceptable && nextPair.State2.IsAcceptable {
-							nextState.IsAcceptable = true
-							result.AcceptStates = append(result.AcceptStates, nextState)
-						}
+					if nextPair.State1.IsAcceptable && !nextPair.State2.IsAcceptable {
+						nextState.IsAcceptable = true
+						result.AcceptStates = append(result.AcceptStates, nextState)
 					}
+
 				}
 
 			}
