@@ -32,3 +32,4 @@ func (it *MatchIterator) Index(idx int) *MatchResult {
 	}
 	return it.allMatches[idx]
 }
+

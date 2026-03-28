@@ -72,7 +72,7 @@ func BuildSyntaxTree (regex string) (*SyntaxTree, error) {
 		case ch == '<' && i > 0 && regex[i-1] != '(':
 			i = processOpTreeBrace(&regex, i, &stack, &groupsCount)
 			if i == -1{
-				return nil, fmt.Errorf("unclosed group name")
+				return nil, fmt.Errorf("unclosed group name <")
 			}
 		default:
 			i = processDefault(ch, i, &regex, tree, &stack)
@@ -214,6 +214,7 @@ func processClBrace (stack *[]interface{}, tree *SyntaxTree, existGroups *map[st
 	nodes := make([]interface{}, 0)
 	var groupName string
 	groupFound := false
+	openParenFound := false
 	for len(*stack) > 0 {
 		top := (*stack)[len(*stack)-1]
 		*stack = (*stack)[:len(*stack)-1]
@@ -224,10 +225,15 @@ func processClBrace (stack *[]interface{}, tree *SyntaxTree, existGroups *map[st
 			break
 		}
 		if top == '(' {
+			openParenFound = true
 			break
 		}
 		nodes = append([]interface{}{top}, nodes...)
 	}
+	if !groupFound && !openParenFound {
+		return fmt.Errorf("unmatched closing parenthesis: no matching '(' found")
+	}
+
 	innerNode := processNodes(nodes, tree)
 	if !groupFound{
 		*stack = append(*stack, innerNode)
@@ -269,6 +275,7 @@ func processClBrace (stack *[]interface{}, tree *SyntaxTree, existGroups *map[st
 	}
 	return nil
 }
+
 
 func processKlini(stack *[]interface{}, i int) (int){
 	if len(*stack) > 0 {

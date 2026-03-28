@@ -39,7 +39,7 @@ func Dialogue () {
 			if err != nil {fmt.Println(err); return}
 			break
 		case 2:
-			fmt.Println("In work:D")
+			search(reader)
 			break
 		case 3:
 			if automataDfa == nil {
@@ -138,4 +138,252 @@ func printInfo() {
 	fmt.Println("6: K-path")
 	fmt.Println("7: Clear")
 	fmt.Println("8: Exit")
+}
+
+
+
+
+func search(reader *bufio.Reader) {
+	fmt.Println("=== SEARCH MODE ===")
+	fmt.Println("Select operation:")
+	fmt.Println("1. Search - find first match (with groups)")
+	fmt.Println("2. SearchAll - find all matches (with iterator)")
+	fmt.Println("3. Accepts - check if whole string matches")
+	fmt.Println("4. SearchFrom - find match from specific position")
+	fmt.Print("Choose (1-4): ")
+
+	choice, err := reader.ReadString('\n')
+	if err != nil {
+		fmt.Printf("Input error: %v\n", err)
+		return
+	}
+	choice = strings.TrimSpace(choice)
+
+	fmt.Print("Enter regex: ")
+	regex, err := reader.ReadString('\n')
+	if err != nil {
+		fmt.Printf("Input error: %v\n", err)
+		return
+	}
+	regex = strings.TrimSpace(regex)
+
+	fmt.Print("Enter text: ")
+	text, err := reader.ReadString('\n')
+	if err != nil {
+		fmt.Printf("Input error: %v\n", err)
+		return
+	}
+	text = strings.TrimSpace(text)
+
+	automDfa, automNfa, err := dfa.BuildDfa(regex)
+	if err != nil {
+		fmt.Printf("Error building automata: %v\n", err)
+		return
+	}
+
+	switch choice {
+	case "1":
+		searchFirstMatch(automDfa, automNfa, text)
+
+	case "2":
+		searchAllMatches(automDfa, automNfa, text)
+
+	case "3":
+		checkAccepts(automDfa, automNfa, text)
+
+	case "4":
+		searchFromPosition(reader, automDfa, automNfa, text)
+
+	default:
+		fmt.Printf("Invalid choice: %s\n", choice)
+	}
+}
+
+
+func searchFirstMatch(automDfa *dfa.Dfa, automNfa *nfa.Nfa, text string) {
+	fmt.Println("\n--- FIRST MATCH SEARCH ---")
+
+	var result *nfa.MatchResult
+
+	if automDfa != nil {
+		dfaResult := automDfa.Search(text)
+		if dfaResult != nil {
+			result = &nfa.MatchResult{
+				Start:  dfaResult.Start,
+				End:    dfaResult.End,
+				Text:   dfaResult.Text,
+				Groups: make(map[string]string),
+			}
+		}
+	} else if automNfa != nil {
+		result = automNfa.Search(text)
+	}
+
+	if result == nil {
+		fmt.Println("No match found")
+		return
+	}
+
+	fmt.Printf("Match found: '%s' [%d:%d]\n", result.Text, result.Start, result.End)
+
+	if len(result.Groups) > 0 {
+		fmt.Println("Captured groups:")
+		for _, name := range result.GroupNames() {
+			fmt.Printf("  %s: '%s'\n", name, result.Group(name))
+		}
+	}
+}
+
+func searchAllMatches(automDfa *dfa.Dfa, automNfa *nfa.Nfa, text string) {
+	fmt.Println("\n--- ALL MATCHES SEARCH ---")
+
+	if automDfa != nil {
+		iter := automDfa.SearchAll(text)
+		if iter == nil {
+			fmt.Println("No matches found")
+			return
+		}
+
+		matches := make([]*nfa.MatchResult, 0)
+		for iter.Next() {
+			dfaMatch := iter.Value()
+			if dfaMatch != nil {
+				matches = append(matches, &nfa.MatchResult{
+					Start:  dfaMatch.Start,
+					End:    dfaMatch.End,
+					Text:   dfaMatch.Text,
+					Groups: make(map[string]string),
+				})
+			}
+		}
+
+		if len(matches) == 0 {
+			fmt.Println("No matches found")
+			return
+		}
+
+		fmt.Println("\n--- Access by index (operator indexing) ---")
+		for i := 0; i < len(matches); i++ {
+			match := iter.Index(i)
+			if match != nil {
+				fmt.Printf("  Index %d: '%s'\n", i, match.Text)
+			}
+		}
+
+	} else if automNfa != nil {
+		iter := automNfa.SearchAll(text)
+		if iter == nil {
+			fmt.Println("No matches found")
+			return
+		}
+
+		matches := make([]*nfa.MatchResult, 0)
+		for iter.Next() {
+			match := iter.Value()
+			if match != nil {
+				matches = append(matches, match)
+			}
+		}
+
+		if len(matches) == 0 {
+			fmt.Println("No matches found")
+			return
+		}
+
+		fmt.Printf("Found %d match(es):\n", len(matches))
+		for i, match := range matches {
+			fmt.Printf("\nMatch %d: '%s' [%d:%d]\n", i+1, match.Text, match.Start, match.End)
+			if len(match.Groups) > 0 {
+				fmt.Println("  Groups:")
+				for _, name := range match.GroupNames() {
+					fmt.Printf("    %s: '%s'\n", name, match.Group(name))
+				}
+			}
+		}
+
+		fmt.Println("\n--- Access by index (operator indexing) ---")
+		for i := 0; i < len(matches); i++ {
+			match := iter.Index(i)
+			if match != nil {
+				fmt.Printf("  Index %d: '%s'\n", i, match.Text)
+			}
+		}
+	} else {
+		fmt.Println("No automaton available")
+	}
+}
+
+
+func checkAccepts(automDfa *dfa.Dfa, automNfa *nfa.Nfa, text string) {
+	fmt.Println("\n--- ACCEPTS CHECK ---")
+	fmt.Printf("Checking if whole string '%s' matches the regex...\n", text)
+
+	var result bool
+
+	if automDfa != nil {
+		result = automDfa.Accepts(text)
+	} else if automNfa != nil {
+		result = automNfa.Accepts(text)
+	}
+
+	if result {
+		fmt.Println("✓ String ACCEPTED - the whole string matches the regex")
+	} else {
+		fmt.Println("✗ String REJECTED - the whole string does NOT match the regex")
+	}
+}
+
+
+func searchFromPosition(reader *bufio.Reader, automDfa *dfa.Dfa, automNfa *nfa.Nfa, text string) {
+	fmt.Println("\n--- SEARCH FROM POSITION ---")
+
+	fmt.Print("Enter start position: ")
+	startPosStr, err := reader.ReadString('\n')
+	if err != nil {
+		fmt.Printf("Input error: %v\n", err)
+		return
+	}
+	startPosStr = strings.TrimSpace(startPosStr)
+
+	startPos, err := strconv.Atoi(startPosStr)
+	if err != nil {
+		fmt.Printf("Invalid position: %v\n", err)
+		return
+	}
+
+	if startPos < 0 || startPos > len(text) {
+		fmt.Printf("Position %d out of range [0, %d]\n", startPos, len(text))
+		return
+	}
+
+	var result *nfa.MatchResult
+
+	if automDfa != nil {
+		dfaResult := automDfa.SearchFrom(text, startPos)
+		if dfaResult != nil {
+			result = &nfa.MatchResult{
+				Start:  dfaResult.Start,
+				End:    dfaResult.End,
+				Text:   dfaResult.Text,
+				Groups: make(map[string]string),
+			}
+		}
+	} else if automNfa != nil {
+		result = automNfa.SearchFrom(text, startPos)
+	}
+
+	if result == nil {
+		fmt.Printf("No match found starting from position %d\n", startPos)
+		return
+	}
+
+	fmt.Printf("Match found at position %d: '%s' [%d:%d]\n",
+		startPos, result.Text, result.Start, result.End)
+
+	if len(result.Groups) > 0 {
+		fmt.Println("Captured groups:")
+		for _, name := range result.GroupNames() {
+			fmt.Printf("  %s: '%s'\n", name, result.Group(name))
+		}
+	}
 }

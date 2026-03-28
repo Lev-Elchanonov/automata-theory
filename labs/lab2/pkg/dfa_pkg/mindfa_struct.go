@@ -3,7 +3,8 @@ package dfa
 import (
 	"fmt"
 	nfa "lab2/pkg/nfa_pkg"
-	"lab2/pkg/regex_pkg"
+	regex "lab2/pkg/regex_pkg"
+
 	"sort"
 	"strings"
 )
@@ -280,9 +281,8 @@ func buildMinimizedDFA(oldDfa *Dfa, partition *Partition) *Dfa {
 
 
 
-
 func BuildDfa(expression string) (*Dfa, *nfa.Nfa, error){
-	Tree, err := regex_pkg.BuildSyntaxTree(expression)
+	Tree, err := regex.BuildSyntaxTree(expression)
 	if err != nil {return nil, nil, err}
 	Nfa := nfa.BuildNfaFromTree(Tree)
 	if Nfa == nil  {

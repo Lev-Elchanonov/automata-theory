@@ -75,6 +75,71 @@ func (n *Nfa) SearchAll(text string) *MatchIterator {
 }
 
 func (n *Nfa) matchAt(text string, start int) *MatchResult {
+	contexts := n.initContexts(start)
+	var bestResult *MatchResult
+	bestLength := -1
+
+	for len(contexts) > 0 {
+		var newContexts []*SearchContext
+
+		for _, ctx := range contexts {
+			if ctx.State.IsAcceptable {
+				result := n.buildMatchResult(text, ctx)
+				if result != nil && len(result.Text) > bestLength {
+					bestLength = len(result.Text)
+					bestResult = result
+				}
+			}
+			if ctx.Pos == len(text) {
+				for _, eps := range ctx.State.Epsilons {
+					if eps.IsRef {
+						continue
+					}
+					newCtx := n.copyContext(ctx)
+					newCtx.State = eps
+					newContexts = append(newContexts, newCtx)
+				}
+				continue
+			}
+			if ctx.State.IsRef {
+				n.handleRef(ctx, text, &newContexts)
+				continue
+			}
+			ch := text[ctx.Pos]
+			if targets, ok := ctx.State.Transitions[ch]; ok {
+				for _, target := range targets {
+					newCtx := n.processTarget(ctx, text, target)
+
+					if newCtx.State.IsAcceptable { // для жадности
+						result := n.buildMatchResult(text, newCtx)
+						if result != nil && len(result.Text) > bestLength {
+							bestLength = len(result.Text)
+							bestResult = result
+						}
+					}
+					if newCtx.State.IsRef {
+						n.handleRef(newCtx, text, &newContexts)
+						continue
+					}
+
+					n.epsilonClosureForContext(newCtx, text, &newContexts)
+					newContexts = append(newContexts, newCtx)
+				}
+			}
+
+			for _, eps := range ctx.State.Epsilons {
+				newCtx := n.processEpsTarget(ctx, eps, text)
+				newContexts = append(newContexts, newCtx)
+			}
+		}
+		n.sortContextsByProgress(newContexts)
+		contexts = newContexts
+	}
+	return bestResult
+}
+
+
+func (n *Nfa) initContexts(start int) []*SearchContext{
 	contexts := []*SearchContext{{
 		State:       n.StartState,
 		Groups:      make(map[string]string),
@@ -88,168 +153,51 @@ func (n *Nfa) matchAt(text string, start int) *MatchResult {
 	for groupName, isStart := range n.StartState.GroupInfo {
 		if isStart {
 			contexts[0].GroupStart[groupName] = start
-			//fmt.Printf("НАЧАЛО ГРУППЫ '%s' на позиции %d (начальное состояние)\n", groupName, start)
 		}
 	}
-
-
-	var bestResult *MatchResult
-	bestLength := -1
-
-	for len(contexts) > 0 {
-		newContexts := []*SearchContext{}
-
-		for _, ctx := range contexts {
-			//fmt.Printf("    Состояние %d, GroupInfo: %v\n", ctx.State.ID, ctx.State.GroupInfo)
-			/*
-			if ctx.Pos == len(text) {
-
-				if ctx.State.IsAcceptable {
-					result := n.buildMatchResult(text, ctx)
-					//fmt.Printf("    Группы: %v\n", result.Groups)
-					if result != nil && len(result.Text) > bestLength {
-						bestLength = len(result.Text)
-						bestResult = result
-					}
-				}
-				for _, eps := range ctx.State.Epsilons {
-					if eps.IsRef {
-						continue
-					}
-					newCtx := n.copyContext(ctx)
-					newCtx.State = eps
-					newContexts = append(newContexts, newCtx)
-				}
-				continue
-			}
-			*/
-			if ctx.State.IsAcceptable {
-				result := n.buildMatchResult(text, ctx)
-				//fmt.Printf( "Я тут добавляю результат\n")
-				if result != nil && len(result.Text) > bestLength {
-					bestLength = len(result.Text)
-					bestResult = result
-				}
-			}
-
-			if ctx.Pos == len(text) {
-				// конец строки — продолжаем по ε-переходам
-				for _, eps := range ctx.State.Epsilons {
-					if eps.IsRef {
-						continue
-					}
-					newCtx := n.copyContext(ctx)
-					newCtx.State = eps
-					newContexts = append(newContexts, newCtx)
-				}
-				continue
-			}
-
-
-			if ctx.State.IsRef {
-				//fmt.Printf("    Состояние-ссылка на группу: %s\n", ctx.State.RefGroup)
-				n.handleRef(ctx, text, &newContexts)
-				continue
-			}
-
-			ch := text[ctx.Pos]
-
-			if targets, ok := ctx.State.Transitions[ch]; ok {
-				for _, target := range targets {
-					//fmt.Printf("Нашли символ: %s\n", string(ch))
-					newCtx := n.copyContext(ctx)
-					newCtx.State = target
-					newCtx.Pos = ctx.Pos + 1
-
-					for groupName, isStart := range target.GroupInfo {
-						if isStart && !ctx.GroupClosed[groupName] {
-							//fmt.Printf("      НАЧАЛО ГРУППЫ '%s' на позиции %d\n", groupName, ctx.Pos)
-							newCtx.GroupStart[groupName] = ctx.Pos
-						}
-					}
-					for groupName := range ctx.GroupStart {
-						if ctx.GroupClosed[groupName] {
-							continue
-						}
-
-						_, currentInGroup := ctx.State.GroupInfo[groupName]
-						_, nextInGroup := target.GroupInfo[groupName]
-
-						if currentInGroup && !nextInGroup {
-							if startPos, ok := ctx.GroupStart[groupName]; ok {
-								captured := text[startPos:ctx.Pos]
-								//fmt.Printf("      ВЫХОД ИЗ ГРУППЫ '%s' ПО СИМВОЛУ! Захвачено: '%s' (позиции %d-%d)\n", groupName, captured, startPos, ctx.Pos)
-								newCtx.Groups[groupName] = captured
-								delete(newCtx.GroupStart, groupName)
-								newCtx.GroupClosed[groupName] = true
-							}
-						}
-					}
-					if newCtx.State.IsAcceptable {
-						result := n.buildMatchResult(text, newCtx)
-						if result != nil && len(result.Text) > bestLength {
-							//fmt.Printf("Тут добавился результат\n")
-							bestLength = len(result.Text)
-							bestResult = result
-						}
-					}
-
-					if newCtx.State.IsRef {
-						//fmt.Printf("    Состояние-ссылка на группу: %s (после перехода по символу)\n", newCtx.State.RefGroup)
-						n.handleRef(newCtx, text, &newContexts)
-						continue
-					}
-					n.epsilonClosureForContext(newCtx, text, &newContexts)
-					newContexts = append(newContexts, newCtx)
-				}
-			}
-
-			for _, eps := range ctx.State.Epsilons {
-				//fmt.Printf("ε-переход: из состояния %d в состояние %d, IsRef=%v\n", ctx.State.ID, eps.ID, eps.IsRef)
-
-				newCtx := n.copyContext(ctx)
-				newCtx.State = eps
-
-				for groupName, isStart := range eps.GroupInfo {
-					if isStart && !ctx.GroupClosed[groupName] {
-						//fmt.Printf("      НАЧАЛО ГРУППЫ '%s' на позиции %d (через ε)\n", groupName, ctx.Pos)
-						newCtx.GroupStart[groupName] = ctx.Pos
-					}
-				}
-
-				for groupName := range ctx.GroupStart {
-					if ctx.GroupClosed[groupName] {
-						continue
-					}
-
-					_, currentInGroup := ctx.State.GroupInfo[groupName]
-					_, nextInGroup := eps.GroupInfo[groupName]
-
-					//fmt.Printf("      Проверка выхода из группы '%s': currentInGroup=%v, nextInGroup=%v\n", groupName, currentInGroup, nextInGroup)
-
-
-					if currentInGroup && !nextInGroup {
-						if startPos, ok := ctx.GroupStart[groupName]; ok {
-							captured := text[startPos:ctx.Pos]
-							//fmt.Printf("      ВЫХОД ИЗ ГРУППЫ '%s'! Захвачено: '%s' (позиции %d-%d)\n",  groupName, captured, startPos, ctx.Pos)
-							newCtx.Groups[groupName] = captured
-							delete(newCtx.GroupStart, groupName)
-							newCtx.GroupClosed[groupName] = true
-						}
-					}
-				}
-
-				newContexts = append(newContexts, newCtx)
-			}
-		}
-
-		n.sortContextsByProgress(newContexts)
-		contexts = newContexts
-	}
-
-	return bestResult
+	return contexts
 }
 
+func (n *Nfa) processTarget(ctx *SearchContext, text string, target *NfaState) *SearchContext{
+	newCtx := n.copyContext(ctx)
+	newCtx.State = target
+	newCtx.Pos = ctx.Pos + 1
+	return n.processGroupsInProcess(ctx, newCtx, text, target)
+}
+
+func (n *Nfa) processEpsTarget(ctx *SearchContext, eps *NfaState, text string) *SearchContext {
+	newCtx := n.copyContext(ctx)
+	newCtx.State = eps
+	return n.processGroupsInProcess(ctx, newCtx, text, eps)
+}
+
+func (n *Nfa) processGroupsInProcess(ctx, newCtx *SearchContext, text string, target *NfaState) *SearchContext {
+	for groupName, isStart := range target.GroupInfo {
+		if isStart && !ctx.GroupClosed[groupName] {
+			newCtx.GroupStart[groupName] = ctx.Pos
+		}
+	}
+	for groupName := range ctx.GroupStart {
+		if ctx.GroupClosed[groupName] {
+			continue
+		}
+
+		_, currentInGroup := ctx.State.GroupInfo[groupName]
+		_, nextInGroup := target.GroupInfo[groupName]
+
+		if currentInGroup && !nextInGroup {
+			if startPos, ok := ctx.GroupStart[groupName]; ok { // вышли из группы захвата
+				captured := text[startPos:ctx.Pos]
+				newCtx.Groups[groupName] = captured
+				delete(newCtx.GroupStart, groupName)
+				newCtx.GroupClosed[groupName] = true
+			}
+		}
+	}
+	return newCtx
+}
+
+// добавления всех e-замыканий для контекста
 func (n *Nfa) epsilonClosureForContext(ctx *SearchContext, text string, newContexts *[]*SearchContext) {
 	// Применяем ε-замыкание к ctx.State
 	queue := []*SearchContext{ctx}
@@ -268,34 +216,8 @@ func (n *Nfa) epsilonClosureForContext(ctx *SearchContext, text string, newConte
 
 			newCtx := n.copyContext(current)
 			newCtx.State = eps
-
-			// Проверяем выход из группы при ε-переходе
-			for groupName := range current.GroupStart {
-				if current.GroupClosed[groupName] {
-					continue
-				}
-				_, currentInGroup := current.State.GroupInfo[groupName]
-				_, nextInGroup := eps.GroupInfo[groupName]
-				if currentInGroup && !nextInGroup {
-					if startPos, ok := current.GroupStart[groupName]; ok {
-						captured := text[startPos:current.Pos]
-						newCtx.Groups[groupName] = captured
-						delete(newCtx.GroupStart, groupName)
-						newCtx.GroupClosed[groupName] = true
-					}
-				}
-			}
-
-			// Проверяем начало группы при ε-переходе
-			for groupName, isStart := range eps.GroupInfo {
-				if isStart && !current.GroupClosed[groupName] {
-					newCtx.GroupStart[groupName] = current.Pos
-				}
-			}
-
-			// Если достигли состояния-ссылки, обрабатываем её
+			n.processGroupsInEpsClosure(current, text, eps, newCtx)
 			if newCtx.State.IsRef {
-				//fmt.Printf("    Состояние-ссылка на группу: %s (через ε)\n", newCtx.State.RefGroup)
 				n.handleRef(newCtx, text, newContexts)
 			} else {
 				*newContexts = append(*newContexts, newCtx)
@@ -305,8 +227,29 @@ func (n *Nfa) epsilonClosureForContext(ctx *SearchContext, text string, newConte
 	}
 }
 
-
-
+func (n *Nfa) processGroupsInEpsClosure(current *SearchContext, text string, eps *NfaState, newCtx *SearchContext) {
+	for groupName := range current.GroupStart {
+		if current.GroupClosed[groupName] {
+			continue
+		}
+		_, currentInGroup := current.State.GroupInfo[groupName]
+		_, nextInGroup := eps.GroupInfo[groupName]
+		if currentInGroup && !nextInGroup {
+			if startPos, ok := current.GroupStart[groupName]; ok {
+				captured := text[startPos:current.Pos]
+				newCtx.Groups[groupName] = captured
+				delete(newCtx.GroupStart, groupName)
+				newCtx.GroupClosed[groupName] = true
+			}
+		}
+	}
+	for groupName, isStart := range eps.GroupInfo {
+		if isStart && !current.GroupClosed[groupName] {
+			newCtx.GroupStart[groupName] = current.Pos
+		}
+	}
+}
+// выбираем самый длинный контекст
 func (n *Nfa) sortContextsByProgress(contexts []*SearchContext) {
 	sort.Slice(contexts, func(i, j int) bool {
 		if contexts[i].Pos != contexts[j].Pos {
@@ -324,37 +267,13 @@ func (n *Nfa) sortContextsByProgress(contexts []*SearchContext) {
 	})
 }
 
-
-/*
 func (n *Nfa) handleRef(ctx *SearchContext, text string, newContexts *[]*SearchContext) {
 	expectedText := ctx.Groups[ctx.State.RefGroup]
-	if expectedText == "" {
-		return
-	}
-
-	if ctx.Pos+len(expectedText) <= len(text) &&
-		text[ctx.Pos:ctx.Pos+len(expectedText)] == expectedText {
-
-		for _, eps := range ctx.State.Epsilons {
-			newCtx := n.copyContext(ctx)
-			newCtx.State = eps
-			newCtx.Pos = ctx.Pos + len(expectedText)
-			*newContexts = append(*newContexts, newCtx)
-		}
-	}
-}
-*/
-func (n *Nfa) handleRef(ctx *SearchContext, text string, newContexts *[]*SearchContext) {
-	expectedText := ctx.Groups[ctx.State.RefGroup]
-	//fmt.Printf("handleRef: group='%s', expected='%s', pos=%d, text[%d:]=%s\n", ctx.State.RefGroup, expectedText, ctx.Pos, ctx.Pos, text[ctx.Pos:])
-
-	if expectedText == "" {
-		//fmt.Println("  Пустая строка — ссылка совпадает, переходим по ε")
+	if expectedText == "" { // если группа опциональная и не имеет текста
 		for _, eps := range ctx.State.Epsilons {
 			newCtx := n.copyContext(ctx)
 			newCtx.State = eps
 			newCtx.Pos = ctx.Pos
-			// Применяем ε-замыкание
 			n.addEpsilonClosure(newCtx, text, newContexts)
 		}
 		return
@@ -362,95 +281,50 @@ func (n *Nfa) handleRef(ctx *SearchContext, text string, newContexts *[]*SearchC
 
 	if ctx.Pos+len(expectedText) <= len(text) &&
 		text[ctx.Pos:ctx.Pos+len(expectedText)] == expectedText {
-		//fmt.Printf("  MATCH! Moving to %d\n", ctx.Pos+len(expectedText))
 		for _, eps := range ctx.State.Epsilons {
 			newCtx := n.copyContext(ctx)
 			newCtx.State = eps
 			newCtx.Pos = ctx.Pos + len(expectedText)
-			// Применяем ε-замыкание
 			n.addEpsilonClosure(newCtx, text, newContexts)
 		}
-	} else {
-		//fmt.Println("  No match")
 	}
 }
 
-
+// используется для добавления e-замыканий для ссылок
 func (n *Nfa) addEpsilonClosure(ctx *SearchContext, text string, newContexts *[]*SearchContext) {
 	visited := make(map[*NfaState]bool)
 	queue := []*SearchContext{ctx}
 	visited[ctx.State] = true
 
-	//fmt.Printf("addEpsilonClosure: start state=%d, pos=%d\n", ctx.State.ID, ctx.Pos)
-
 	for len(queue) > 0 {
 		current := queue[0]
 		queue = queue[1:]
 
-		//fmt.Printf("  Processing state=%d, pos=%d, IsAcceptable=%v\n", current.State.ID, current.Pos, current.State.IsAcceptable)
-
 		if current.State.IsAcceptable {
 			result := n.buildMatchResult(text, current)
 			if result != nil {
-				//fmt.Printf("  addEpsilonClosure ADDING RESULT: start=%d, end=%d, text='%s'\n", result.Start, result.End, result.Text)
 				*newContexts = append(*newContexts, current)
 			}
-		}
-
-		// Проверяем, является ли текущее состояние принимающим
-		if current.State.IsAcceptable {
-			//fmt.Printf("    ACCEPTABLE STATE! pos=%d, text length=%d\n", current.Pos, len(text))
 			if current.Pos == len(text) {
-				//fmt.Printf("    END OF STRING! Adding result\n")
 				*newContexts = append(*newContexts, current)
-			} else {
-				//fmt.Printf("    NOT end of string (pos=%d, len=%d)\n", current.Pos, len(text))
 			}
 		}
 
-		// Обрабатываем ε-переходы
 		for _, eps := range current.State.Epsilons {
 			if visited[eps] {
 				continue
 			}
 			visited[eps] = true
-
-			//fmt.Printf("    ε-transition: %d -> %d\n", current.State.ID, eps.ID)
-
 			newCtx := n.copyContext(current)
 			newCtx.State = eps
-
-			// Проверяем выход из группы
-			for groupName := range current.GroupStart {
-				if current.GroupClosed[groupName] {
-					continue
-				}
-				_, currentInGroup := current.State.GroupInfo[groupName]
-				_, nextInGroup := eps.GroupInfo[groupName]
-				if currentInGroup && !nextInGroup {
-					if startPos, ok := current.GroupStart[groupName]; ok {
-						captured := text[startPos:current.Pos]
-						//fmt.Printf("      EXIT GROUP '%s': captured '%s'\n", groupName, captured)
-						newCtx.Groups[groupName] = captured
-						delete(newCtx.GroupStart, groupName)
-						newCtx.GroupClosed[groupName] = true
-					}
-				}
-			}
-
-			// Проверяем начало группы
-			for groupName, isStart := range eps.GroupInfo {
-				if isStart && !current.GroupClosed[groupName] {
-					newCtx.GroupStart[groupName] = current.Pos
-					//fmt.Printf("      START GROUP '%s' at pos=%d\n", groupName, current.Pos)
-				}
-			}
-
+			n.processGroupsInEpsClosure(current, text, eps, newCtx)
 			queue = append(queue, newCtx)
 			*newContexts = append(*newContexts, newCtx)
 		}
 	}
 }
+
+
 
 func (n *Nfa) copyContext(ctx *SearchContext) *SearchContext {
 	groups := make(map[string]string)
@@ -477,7 +351,6 @@ func (n *Nfa) copyContext(ctx *SearchContext) *SearchContext {
 
 
 func (n *Nfa) buildMatchResult(text string, ctx *SearchContext) *MatchResult {
-
 	result := &MatchResult{
 		Start:  ctx.StartPos,
 		End:    ctx.Pos,
@@ -488,28 +361,12 @@ func (n *Nfa) buildMatchResult(text string, ctx *SearchContext) *MatchResult {
 	for groupName, groupText := range ctx.Groups {
 		result.Groups[groupName] = groupText
 	}
-
 	for groupName, startPos := range ctx.GroupStart {
 		if _, exists := result.Groups[groupName]; !exists {
 			result.Groups[groupName] = text[startPos:ctx.Pos]
 		}
 	}
-
 	return result
-}
-
-func (n *Nfa) sortContextsByCapturedLength(contexts []*SearchContext) {
-	sort.Slice(contexts, func(i, j int) bool {
-		lenI := 0
-		lenJ := 0
-		for _, text := range contexts[i].Groups {
-			lenI += len(text)
-		}
-		for _, text := range contexts[j].Groups {
-			lenJ += len(text)
-		}
-		return lenI > lenJ
-	})
 }
 
 
@@ -540,10 +397,9 @@ func (m *MatchResult) HasGroup(name string) bool {
 
 
 func (n *Nfa) findAllFrom(text string, startPos int) []*MatchResult {
-	results := []*MatchResult{}
+	var results []*MatchResult
 	seen := make(map[string]bool)
 
-	// Для каждой начальной позиции
 	for i := startPos; i < len(text); i++ {
 		matches := n.findAllMatchesAt(text, i)
 		for _, m := range matches {
@@ -560,36 +416,17 @@ func (n *Nfa) findAllFrom(text string, startPos int) []*MatchResult {
 
 //findAllMatchesAt возвращает ВСЕ совпадения, начинающиеся с позиции start
 func (n *Nfa) findAllMatchesAt(text string, start int) []*MatchResult {
-	results := []*MatchResult{}
-
-	contexts := []*SearchContext{{
-		State:       n.StartState,
-		Groups:      make(map[string]string),
-		GroupStart:  make(map[string]int),
-		GroupClosed: make(map[string]bool),
-		Pos:         start,
-		StartPos:    start,
-	}}
-
-	for groupName, isStart := range n.StartState.GroupInfo {
-		if isStart {
-			contexts[0].GroupStart[groupName] = start
-		}
-	}
-
+	contexts := n.initContexts(start)
+	var results []*MatchResult
 	for len(contexts) > 0 {
-		newContexts := []*SearchContext{}
-
+		var newContexts []*SearchContext
 		for _, ctx := range contexts {
 			if ctx.State.IsAcceptable {
 				result := n.buildMatchResult(text, ctx)
 				if result != nil {
-					//fmt.Printf("  ADDING RESULT: start=%d, end=%d, text='%s'\n", result.Start, result.End, result.Text)
 					results = append(results, result)
 				}
 			}
-
-			//fmt.Printf("findAllMatchesAt: state=%d, pos=%d, IsRef=%v, IsAcceptable=%v\n", ctx.State.ID, ctx.Pos, ctx.State.IsRef, ctx.State.IsAcceptable)
 			if ctx.Pos == len(text) {
 				if ctx.State.IsAcceptable {
 					result := n.buildMatchResult(text, ctx)
@@ -605,88 +442,25 @@ func (n *Nfa) findAllMatchesAt(text string, start int) []*MatchResult {
 				}
 				continue
 			}
-
 			if ctx.State.IsRef {
-				//fmt.Printf("  Handling ref: group=%s, groups=%v\n", ctx.State.RefGroup, ctx.Groups)
 				n.handleRef(ctx, text, &newContexts)
 				continue
 			}
-
 			ch := text[ctx.Pos]
-
 			if targets, ok := ctx.State.Transitions[ch]; ok {
 				for _, target := range targets {
-					newCtx := n.copyContext(ctx)
-					newCtx.State = target
-					newCtx.Pos = ctx.Pos + 1
-
-					for groupName, isStart := range target.GroupInfo {
-						if isStart && !ctx.GroupClosed[groupName] {
-							newCtx.GroupStart[groupName] = ctx.Pos
-						}
-					}
-					for groupName := range ctx.GroupStart {
-						if ctx.GroupClosed[groupName] {
-							continue
-						}
-						_, currentInGroup := ctx.State.GroupInfo[groupName]
-						_, nextInGroup := target.GroupInfo[groupName]
-						if currentInGroup && !nextInGroup {
-							if startPos, ok := ctx.GroupStart[groupName]; ok {
-								captured := text[startPos:ctx.Pos]
-								newCtx.Groups[groupName] = captured
-								delete(newCtx.GroupStart, groupName)
-								newCtx.GroupClosed[groupName] = true
-							}
-						}
-					}
-
-					// Добавляем совпадение, если достигли принимающего состояния
-					/*
-					if newCtx.State.IsAcceptable {
-						result := n.buildMatchResult(text, newCtx)
-						results = append(results, result)
-					}
-					*/
-
+					newCtx := n.processTarget(ctx, text, target)
 
 					newContexts = append(newContexts, newCtx)
 				}
 			}
-
 			for _, eps := range ctx.State.Epsilons {
-
-				newCtx := n.copyContext(ctx)
-				newCtx.State = eps
-
-				for groupName, isStart := range eps.GroupInfo {
-					if isStart && !ctx.GroupClosed[groupName] {
-						newCtx.GroupStart[groupName] = ctx.Pos
-					}
-				}
-
-				for groupName := range ctx.GroupStart {
-					if ctx.GroupClosed[groupName] {
-						continue
-					}
-					_, currentInGroup := ctx.State.GroupInfo[groupName]
-					_, nextInGroup := eps.GroupInfo[groupName]
-					if currentInGroup && !nextInGroup {
-						if startPos, ok := ctx.GroupStart[groupName]; ok {
-							captured := text[startPos:ctx.Pos]
-							newCtx.Groups[groupName] = captured
-							delete(newCtx.GroupStart, groupName)
-							newCtx.GroupClosed[groupName] = true
-						}
-					}
-				}
-
+				newCtx := n.processEpsTarget(ctx, eps, text)
 				// Добавляем совпадение, если достигли принимающего состояния
 				if newCtx.State.IsAcceptable {
 					result := n.buildMatchResult(text, newCtx)
 					results = append(results, result)
 				}
-
 				newContexts = append(newContexts, newCtx)
 			}
 		}
@@ -694,6 +468,14 @@ func (n *Nfa) findAllMatchesAt(text string, start int) []*MatchResult {
 		n.sortContextsByProgress(newContexts)
 		contexts = newContexts
 	}
-
 	return results
+}
+
+func (n *Nfa) Accepts(text string) bool {
+	result := n.matchAt(text, 0)
+
+	if result != nil && result.Start == 0 && result.End == len(text) {
+		return true
+	}
+	return false
 }

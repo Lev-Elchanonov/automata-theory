@@ -2,6 +2,8 @@ package dfa
 
 import nfa "lab2/pkg/nfa_pkg"
 
+
+
 func (this *Dfa) Invert() *Dfa{
 	inverted := &Dfa{
 		Alphabet: this.Alphabet,

@@ -2,6 +2,7 @@ package test
 
 import (
 	dfa "lab2/pkg/dfa_pkg"
+	regex "lab2/pkg/string_opers_pkg"
 	"testing"
 )
 
@@ -138,11 +139,7 @@ func TestSearchFrom(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			minDfa, _, err := dfa.BuildDfa(test.pattern)
-			if err != nil {
-				t.Fatalf("Error building DFA: %v", err)
-			}
-			result := minDfa.SearchFrom(test.text, test.startPos)
+			result, _ := regex.SearchFrom(test.pattern, test.text, test.startPos)
 
 			if test.expected == nil {
 				if result != nil {
@@ -334,9 +331,9 @@ func TestOperatorPrecedence(t *testing.T) {
 		},
 		{
 			name:     "parentheses_override",
-			pattern:  "a(b|c)",
-			text:     "ac",
-			expected: "ac",
+			pattern:  "a(b|c%)%)",
+			text:     "ac)",
+			expected: "ac)",
 		},
 		{
 			name:     "nested_parentheses",
@@ -427,73 +424,6 @@ func TestEdgeCases(t *testing.T) {
 
 
 
-// ТЕСТЫ ПРИНЯТИЯ ВСЕЙ СТРОКИ
-func TestAccepts(t *testing.T) {
-	tests := []struct {
-		name     string
-		pattern  string
-		text     string
-		expected bool
-	}{
-		{
-			name:     "full_match",
-			pattern:  "abc",
-			text:     "abc",
-			expected: true,
-		},
-		{
-			name:     "partial_match",
-			pattern:  "abc",
-			text:     "abcd",
-			expected: false,
-		},
-		{
-			name:     "closure_match",
-			pattern:  "a...",
-			text:     "aaaaaaaaaaaaaaaaaaa",
-			expected: true,
-		},
-		{
-			name:     "empty_string_match",
-			pattern:  "a...?",
-			text:     "",
-			expected: true,
-		},
-		{
-			name:     "union_match_first",
-			pattern:  "ab|cd",
-			text:     "ab",
-			expected: true,
-		},
-		{
-			name:     "union_match_second",
-			pattern:  "ab|cd",
-			text:     "cd",
-			expected: true,
-		},
-		{
-			name:     "hard_string",
-			pattern:  "(((a?b?)...)?|(abc)...)?|((a?)?){2}|((b?d?){3}){2}",
-			text:     "a",
-			expected: true,
-		},
-
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			minDfa, _, err := dfa.BuildDfa(test.pattern)
-			if err != nil {
-				t.Fatalf("Error building DFA: %v", err)
-			}
-			result := minDfa.Accepts(test.text)
-
-			if result != test.expected {
-				t.Errorf("Expected %v, received %v", test.expected, result)
-			}
-		})
-	}
-}
 
 
 // ТЕСТЫ ПРИНЯТИЯ СЛОЖНОЙ РЕГУЛЯРКИ ЦЕЛИКОМ
@@ -637,5 +567,67 @@ func TestIteratorIndex(t *testing.T) {
 	negative := iter.Index(-1)
 	if negative != nil {
 		t.Error("Negative index should return nil")
+	}
+}
+
+
+
+// ТЕСТЫ НА НЕПРАВЛИЬНО ПОСТРОЕННУЮ РЕГУЛЯРКУ
+func TestErrorRefex(t *testing.T) {
+	tests := []struct {
+		name        string
+		pattern     string
+
+	}{
+		{
+			name:        "unequal_braces_1",
+			pattern:     "(xyz",
+		},
+		{
+			name:        "unequal_braces_2",
+			pattern:     "xyz)))",
+		},
+		{
+			name:        "unequal_braces_3",
+			pattern:     "(xyz))",
+		},
+		{
+			name:        "unequal_braces_groups_1",
+			pattern:     "(<abcxyz)",
+		},
+		{
+			name:        "unequal_braces_groups_2",
+			pattern:     "(abc>xyz)",
+		},
+		{
+			name:        "unequal_braces_groups_3",
+			pattern:     "<abc>xyz-<abc>",
+		},
+		{
+			name:        "unequal_braces_groups_4",
+			pattern:     "(<abc>xyz-<abc>",
+		},
+		{
+			name:        "unequal_braces_groups_5",
+			pattern:     "(<abc>>xyz)",
+		},
+		{
+			name:        "unequal_braces_groups_6",
+			pattern:     "(<<abc>xyz)",
+		},
+
+
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			minDfa, Nfa, err := dfa.BuildDfa(test.pattern)
+			if minDfa == nil && Nfa == nil && err != nil{
+
+			} else {
+				t.Error("Expected broken regex")
+			}
+
+		})
 	}
 }

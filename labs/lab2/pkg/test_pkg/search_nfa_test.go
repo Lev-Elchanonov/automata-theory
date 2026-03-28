@@ -1,4 +1,4 @@
-package nfa_test
+package test
 
 import (
 	"fmt"
@@ -21,7 +21,7 @@ func buildTestNFA(t *testing.T, pattern string) *nfa.Nfa {
 }
 
 // TestSearch проверяет поиск первого вхождения
-func TestSearch(t *testing.T) {
+func TestSearchNfa(t *testing.T) {
 	tests := []struct {
 		name     string
 		pattern  string
@@ -280,7 +280,7 @@ func TestReferences(t *testing.T) {
 }
 
 // TestSearchFrom проверяет поиск с указанной позиции
-func TestSearchFrom(t *testing.T) {
+func TestSearchFromNfa(t *testing.T) {
 	tests := []struct {
 		name     string
 		pattern  string
@@ -340,7 +340,7 @@ func TestSearchFrom(t *testing.T) {
 }
 
 // TestSearchAll проверяет итератор по всем совпадениям
-func TestSearchAll(t *testing.T) {
+func TestSearchAllNfa(t *testing.T) {
 	tests := []struct {
 		name        string
 		pattern     string
@@ -416,7 +416,7 @@ func TestSearchAll(t *testing.T) {
 }
 
 // TestIteratorIndex проверяет доступ по индексу через итератор
-func TestIteratorIndex(t *testing.T) {
+func TestIteratorIndexNfa(t *testing.T) {
 	pattern := "(<word>hello|helllo|hhhellllllloooo|hellllllloooooooooo)"
 	text := "hello helllo hhhellllllloooo hellllllloooooooooo"
 
@@ -511,7 +511,7 @@ func TestMatchResultMethods(t *testing.T) {
 }
 
 // TestEdgeCases проверяет граничные случаи
-func TestEdgeCases(t *testing.T) {
+func TestEdgeCasesNfa(t *testing.T) {
 	tests := []struct {
 		name     string
 		pattern  string
@@ -608,6 +608,86 @@ func TestGreedyMatch(t *testing.T) {
 			if len(result.Text) != test.expectedLen {
 				t.Errorf("Length: expected %d, received %d", test.expectedLen, len(result.Text))
 			}
+		})
+	}
+}
+
+
+func TestAccepts(t *testing.T) {
+	tests := []struct {
+		name     string
+		pattern  string
+		text     string
+		expected bool
+	}{
+		{
+			name:     "klini_1",
+			pattern:  "a...",
+			text:     "aaaaaaaaaa",
+			expected: true,
+		},
+		{
+			name:     "klini_2",
+			pattern:  "a...",
+			text:     "b",
+			expected: false,
+		},
+		{
+			name:     "klini_3",
+			pattern:  "a...",
+			text:     "",
+			expected: true,
+		},
+		{
+			name:     "diff_string",
+			pattern:  "(a...|b)c{3}e?",
+			text:     "bccc",
+			expected: true,
+		},
+		{
+			name:     "diff_string_2",
+			pattern:  "(a...|b)c{3}e?",
+			text:     "aaaccce",
+			expected: true,
+		},
+		{
+			name:     "diff_string_2",
+			pattern:  "(a...|b)c{3}e?",
+			text:     "aaabccce",
+			expected: false,
+		},
+		{
+			name:     "named_groups",
+			pattern:  "(<%<%abc>rty)-(<ab>y...q?)",
+			text:     "rty-yyyy",
+			expected: true,
+		},
+		{
+			name:     "ref_w_groups_1",
+			pattern:  "(<empty>a?)b-<empty>",
+			text:     "b-",
+			expected: true,
+		},
+		{
+			name:     "ref_w_groups_2",
+			pattern:  "(<%<%ab%>%c>a...b)c-<%<%ab%>%c>",
+			text:     "aaabc-aaab",
+			expected: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if test.pattern == "" {
+				return
+			}
+			nfaAutomaton := buildTestNFA(t, test.pattern)
+			result := nfaAutomaton.Accepts(test.text)
+
+			if test.expected != result {
+				t.Errorf("Expected %t, received %t", test.expected, result)
+			}
+
 		})
 	}
 }

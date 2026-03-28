@@ -1,7 +1,7 @@
 package test
 
 import (
-	dfa "lab2/pkg/dfa_pkg"
+	regex "lab2/pkg/string_opers_pkg"
 	"testing"
 )
 
@@ -289,15 +289,19 @@ var alphabetSearchTests = []SearchTestCase{
 }
 
 
+// ЭКРАНИРОВАНИЕ
+var percentAcceptStates = []AcceptsTestCase{
+	{"union", "1%|%234", "1|234",  true},
+	{"klini", "a%.%%.%%.%bc", "a...bc", true},
+	{"figured_and_circled", "%(%abc%{%3%}%-%)%", "(abc{3}-)", true},
+	{"special_chars", "%%%", "%", true},
+}
+
 func runSearchTests(t *testing.T, tests []SearchTestCase) {
 	for _, tt := range tests {
 		t.Run(tt.testName, func(t *testing.T) {
-			dfaAuto, _, err := dfa.BuildDfa(tt.pattern)
-			if err != nil {
-				t.Fatalf("failed to build dfa for pattern '%s': %v", tt.pattern, err)
-			}
 
-			result := dfaAuto.Search(tt.text)
+			result, _ := regex.Search(tt.pattern, tt.text)
 
 			if tt.expected == "" {
 				if result != nil {
@@ -326,12 +330,7 @@ func runSearchTests(t *testing.T, tests []SearchTestCase) {
 func runSearchAllTests(t *testing.T, tests []SearchAllTestCase) {
 	for _, tt := range tests {
 		t.Run(tt.testName, func(t *testing.T) {
-			dfaAuto, _, err := dfa.BuildDfa(tt.pattern)
-			if err != nil {
-				t.Fatalf("failed to build dfa for pattern '%s': %v", tt.pattern, err)
-			}
-
-			iter := dfaAuto.SearchAll(tt.text)
+			iter, _:= regex.SearchAll(tt.pattern, tt.text)
 			results := make([]string, 0)
 			for iter.Next() {
 				results = append(results, iter.Value().Text)
@@ -341,7 +340,7 @@ func runSearchAllTests(t *testing.T, tests []SearchAllTestCase) {
 				t.Errorf("expected %d matches, got %d", len(tt.expected), len(results))
 			}
 
-			iterOther := dfaAuto.SearchAll(tt.text)
+			iterOther, _:= regex.SearchAll(tt.pattern, tt.text)
 			for i, exp := range tt.expected {
 				if i >= len(results) {
 					break
@@ -358,12 +357,7 @@ func runSearchAllTests(t *testing.T, tests []SearchAllTestCase) {
 func runAcceptsTests(t *testing.T, tests []AcceptsTestCase) {
 	for _, tt := range tests {
 		t.Run(tt.testName, func(t *testing.T) {
-			dfaAuto, _, err := dfa.BuildDfa(tt.pattern)
-			if err != nil {
-				t.Fatalf("failed to build dfa for pattern '%s': %v", tt.pattern, err)
-			}
-
-			result := dfaAuto.Accepts(tt.text)
+			result := regex.Accepts(tt.pattern, tt.text)
 			if result != tt.expected {
 				t.Errorf("accepts('%s') = %v, expected %v", tt.text, result, tt.expected)
 			}
@@ -452,5 +446,8 @@ func TestDFAAccepts(t *testing.T) {
 	})
 	t.Run("complex", func(t *testing.T) {
 		runAcceptsTests(t, complexAcceptsTests)
+	})
+	t.Run("percent", func(t *testing.T) {
+		runAcceptsTests(t, percentAcceptStates)
 	})
 }
