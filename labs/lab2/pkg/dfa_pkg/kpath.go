@@ -168,9 +168,6 @@ func (this *RegexBuilder) makeKlini(str string) string {
 		return "ε"
 	}
 
-	if strings.HasPrefix(str, "(") && strings.HasSuffix(str, ")..."){
-		return str
-	}
 
 	return "(" + "(" + str + ")" + "..." + ")"
 }
@@ -204,14 +201,11 @@ func (this *RegexBuilder) containsEpsilon(s string) bool {
 }
 
 func (this *RegexBuilder) simplify(expr string) string {
-
-	// Убираем ε из конкатенаций
 	expr = this.removeEpsilons(expr)
-
 	return expr
 }
 
-// NormalizeRegex удаляет все символы ε из регулярного выражения
+
 func (this *RegexBuilder) removeEpsilons(regex string) string {
 	if regex == "" {
 		return ""

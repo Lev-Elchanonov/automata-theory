@@ -284,6 +284,14 @@ func importTemplate(templateStart, templateAccept *NfaState, targetNfa *Nfa,
 			}
 		}
 		newState.IsAcceptable = oldState.IsAcceptable
+		for k, v := range oldState.GroupInfo {
+			newState.GroupInfo[k] = v
+		}
+
+		// Копируем информацию о ссылках
+		newState.IsRef = oldState.IsRef
+		newState.RefGroup = oldState.RefGroup
+
 	}
 
 	return stateMap[templateStart], stateMap[templateAccept]

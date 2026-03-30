@@ -159,6 +159,64 @@ func TestGroups(t *testing.T) {
 				"optional": "",
 			},
 		},
+		{
+			name:    "group_w_oper_1",
+			pattern: "(<test>a)...",
+			text:    "aaaaaaaaaaaa",
+			expected: map[string]string{
+				"test": "a",
+			},
+		},
+		{
+			name:    "group_w_oper_2",
+			pattern: "(<test>a)?-",
+			text:    "-",
+			expected: map[string]string{
+				"test": "",
+			},
+		},
+		{
+			name:    "group_w_oper_3",
+			pattern: "(<test>a)?-",
+			text:    "a-",
+			expected: map[string]string{
+				"test": "a",
+			},
+		},
+		{
+			name:    "group_w_oper_4",
+			pattern: "(<test>a){3}",
+			text:    "aaaa",
+			expected: map[string]string{
+				"test": "a",
+			},
+		},
+		{
+			name:    "group_w_oper_4",
+			pattern: "((<test>a... )...){3}",
+			text:    "aa a aaa",
+			expected: map[string]string{
+				"test": "aa ",
+			},
+		},
+		{
+			name:    "group_w_oper_5",
+			pattern: "(<test>a)?-(<test2>b)...",
+			text:    "a-bbbbbbbbbbbb",
+			expected: map[string]string{
+				"test": "a",
+				"test2": "b",
+			},
+		},
+		{
+			name:    "group_w_oper_5",
+			pattern: "(<test>a)?-(<test2>b)...",
+			text:    "-bbbbbbbbbbbb",
+			expected: map[string]string{
+				"test": "",
+				"test2": "b",
+			},
+		},
 	}
 
 	for _, test := range tests {

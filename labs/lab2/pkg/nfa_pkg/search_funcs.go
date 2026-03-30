@@ -199,7 +199,6 @@ func (n *Nfa) processGroupsInProcess(ctx, newCtx *SearchContext, text string, ta
 
 // добавления всех e-замыканий для контекста
 func (n *Nfa) epsilonClosureForContext(ctx *SearchContext, text string, newContexts *[]*SearchContext) {
-	// Применяем ε-замыкание к ctx.State
 	queue := []*SearchContext{ctx}
 	visited := make(map[*NfaState]bool)
 	visited[ctx.State] = true
@@ -368,7 +367,6 @@ func (n *Nfa) buildMatchResult(text string, ctx *SearchContext) *MatchResult {
 	}
 	return result
 }
-
 
 
 // Group возвращает текст группы по имени
