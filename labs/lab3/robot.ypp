@@ -1,0 +1,338 @@
+%skeleton "lalr1.cc"
+%require "3.0"
+%language "c++"
+
+%defines "robot.tab.hpp"
+%output "robot.tab.cpp"
+
+%code requires{
+    #include <iostream>
+    #include <string>
+    #include <vector>
+    #include <memory>
+    #include "ast.hpp"
+    namespace yy{
+        class RobotLexer;
+    }
+}
+
+%code provides{
+    void yyerror(const std::string& msg);
+}
+
+%code{
+    #include "RobotLexer.h"
+    #include <cstdio>
+    #include <map>
+    #include <stack>
+
+    bool has_main = false;
+
+    // таблица символов
+    struct SymbolInfo{
+        VarDecl decl_;
+        std::vector<int> array_values_;
+        bool initialized_ = false;
+    }
+    std::map<std::string, SymbolInfo> global_symbols;
+    std::map<std::string, FuncDecl> functions;
+
+    vod yyerror(const std::sting& msg){
+        std::cerr << "SYNTAX ERROR: " << msg << std::endl;
+    }
+}
+
+%parse-param { yy::RobotLexer& lexer }
+%define api.parser.class { RobotParser }
+%define api.namespace { yy }
+%define api.value.type variant
+%define api.token.constructor
+%define parse.error verbose
+%define parse.trace
+
+%locations
+
+
+
+
+%token  TOKEN_PROGRAM_OPEN TOKEN_PROGRAM_CLOSE
+%token  TOKEN_VARDECL_OPEN TOKEN_VARDECL_CLOSE
+%token  TOKEN_VAR_OPEN TOKEN_VAR_CLOSE
+%token  TOKEN_FUNC_OPEN TOKEN_FUNC_CLOSE
+    %token <std::string> TOKEN_MAIN
+%token  TOKEN_CALL_OPEN TOKEN_CALL_CLOSE
+
+
+%token  TOKEN_NAME_ATTR
+%token  TOKEN_CONST
+%token  TOKEN_COUNT
+
+%token <std::string> TOKEN_STRING
+%token <bool> TOKEN_BOOL
+
+%token  TOKEN_TYPE_OPEN TOKEN_TYPE_CLOSE
+
+%token  TOKEN_TYPE_INT
+%token  TOKEN_TYPE_BOOL
+%token  TOKEN_TYPE_CELL
+%token <CellValue> TOKEN_CELL_VALUE
+
+%token  TOKEN_DIMENSIONS_OPEN TOKEN_DIMENSIONS_CLOSE
+%token  TOKEN_DIMENSION_OPEN TOKEN_DIMENSION_CLOSE
+
+%token  TOKEN_VALUES_OPEN TOKEN_VALUES_CLOSE
+%token  TOKEN_VALUE_OPEN TOKEN_VALUE_CLOSE
+
+%token  TOKEN_DIM_OPEN TOKEN_DIM_CLOSE
+%token  TOKEN_INDEX_OPEN TOKEN_INDEX_CLOSE
+
+%token  TOKEN_ASSIGN_OPEN TOKEN_ASSIGN_CLOSE
+
+%token  TOKEN_TO_OPEN TOKEN_TO_CLOSE
+
+%token  TOKEN_WHILE_OPEN TOKEN_WHILE_CLOSE
+%token  TOKEN_DO_OPEN TOKEN_DO_CLOSE
+
+%token  TOKEN_CHECK_OPEN TOKEN_CHECK_CLOSE
+
+%token  TOKEN_SWITCH_OPEN TOKEN_SWITCH_CLOSE
+%token  TOKEN_CONDITION_OPEN TOKEN_CONDITION_CLOSE
+
+%token  TOKEN_LEFT_OPEN TOKEN_LEFT_CLOSE
+%token  TOKEN_RIGHT_OPEN TOKEN_RIGHT_CLOSE
+%token  TOKEN_UP_OPEN TOKEN_UP_CLOSE
+%token  TOKEN_DOWN_OPEN TOKEN_DOWN_CLOSE
+
+%token  TOKEN_SENDDRONS_OPEN TOKEN_SENDDRONS_CLOSE
+%token  TOKEN_GETDRONSCOUNT_OPEN TOKEN_GETDRONSCOUNT_CLOSE
+
+%token  TOKEN_ADD_OPEN TOKEN_ADD_CLOSE
+%token  TOKEN_MUL_OPEN TOKEN_MUL_CLOSE
+%token  TOKEN_SUB_OPEN TOKEN_SUB_CLOSE
+%token  TOKEN_DIV_OPEN TOKEN_DIV_CLOSE
+
+%token  TOKEN_NOT_OPEN TOKEN_NOT_CLOSE
+%token  TOKEN_OR_OPEN TOKEN_OR_CLOSE
+%token  TOKEN_AND_OPEN TOKEN_AND_CLOSE
+
+%token  TOKEN_MAX_OPEN TOKEN_MAX_CLOSE
+%token  TOKEN_MIN_OPEN TOKEN_MIN_CLOSE
+
+%token  TOKEN_EQ_OPEN TOKEN_EQ_CLOSE
+
+%token <bool> TOKEN_BOOL_LIT
+%token <int> TOKEN_INT_LIT
+%token <std::string> TOKEN_IDENTIFIER
+
+%token TOKEN_SELFCLOSE
+%token '>'
+
+%type <std::vector<VarDecl>> var_list // хранит все переменные внутри var declaration
+%type <VarDecl> var_item // одно объявление переменной
+%type <bool> opt_const // true или false. Является ли переменная константой
+%type <VarDecl::VarType> type_spec // тип перменной (INT, BOOL, CELL)
+%type <std::vector<int>> dims_list opt_dimensions // размеры векторов (объявлены либо опционально)
+%type <std::vector<expr_ptr>> value_list opt_init_values // список значений (объявлены либо опционально)
+
+%type <expr_ptr> expr primary_expr var_ref // (expr - указатель на узел выражения; primary - базовое выражение без операторов; var_ref - ссылка на переменную)
+%type <std::vector<expr_ptr>> expr_list opt_expr_list var_ref_list //(expr_list - список выражения (аргументы для ADD и тд). Может быть опционален или состоять из ссылок)
+
+%type <stmt_ptr> stmt assign_stmt while_stmt switch_stmt move_stmt call_stmt getdrons_stmt // (указатель на узел любой инструкции)
+%type <std::vector<stmt_ptr>> stmt_list // список инструкций
+%type <ConditionBranch> cond_branch // ветка условия
+%type <std::vector<ConditionBranch>> cond_list // список веток условий для switch
+
+%type <FuncDecl> func_def // описание функции
+
+
+%%
+
+program:
+    TOKEN_PROGRAM_OPEN program_items TOKEN_PROGRAM_CLOSE
+    {
+        if (!has_main){
+            fprintf(stderr, "SEMANTIC ERROR: function 'main' not found\n");
+            exit(1);
+        }
+        std::cout << "=== PARSING COMPLETED SUCCESSFULLY ===" << std::endl;
+        std::cout << "Global variables: " << global_symbols.size() << std::endl;
+        std::cout << "Functions: " << functions.size() << std::endl;
+    }
+;
+
+program_items:
+    %empty
+    | program_items vardecl_block
+    | program_items func_def
+    {
+        if (!$2.name.empty()){
+            if (functions.find($2.name) != functions.end()){
+                std::cerr << "SEMANTIC ERROR: function '" << $2.name << "' already defined" << std::endl;
+                exit(1);
+            }
+            functions[$2.name] = $2;
+            std::cout << "Function defined: " << $2.name << std::endl;
+        }
+    }
+    | program_items error
+    {
+        std::cerr << "Syntax error in global scope" << std::endl;
+        yyerrok;
+    }
+;
+
+vardecl_block:
+    TOKEN_VARDECL_OPEN var_list TOKEN_VARDECL_CLOSE
+    {
+        for (const auto& decl : $2){
+            if (global_symbols.find(decl.name) != global_symbols.end()){
+                std::cerr << "SEMANTIC ERROR: variable '" << decl.name << "' already declared" << std::endl;
+
+            }
+            SymbolInfo info;
+            info.decl = decl;
+            global_symbols[decl.name] = info;
+            std::cout << "Variable declared: " << decl.name << "(type: " << decl.type << ")" << std::endl;
+        }
+    }
+;
+
+var_list:
+    var_item
+    {
+        $$.push_back($1);
+    }
+    | var_list var_item
+    {
+        $1.push_back($2);
+        $$ = $1;
+    }
+;
+
+/*
+<VAR name="matrix" CONST="FALSE">
+    <TYPE>INT</TYPE>
+    <DIMENSIONS count="2">
+        <DIMENSION>3</DIMENSION>
+        <DIMENSION>3</DIMENSION>
+    </DIMENSIONS>
+    <VALUES>
+        <VALUE>1</VALUE>
+        <VALUE>2</VALUE>
+        <VALUE>3</VALUE>
+    </VALUES>
+</VAR>
+*/
+
+var_item:
+    TOKEN_VAR_OPEN TOKEN_NAME_ATTR TOKEN_STRING opt_const '>' type_spec opt_dimensions opt_init_values TOKEN_VAR_CLOSE
+    {
+        $$.name_ = $3;
+        $$.is_const_ = $4;
+        $$.type_ = $6;
+        $$.dimensions_ = $7;
+        $$.init_values_ = $8;
+    }
+;
+opt_const:
+    TOKEN_CONST TOKEN_BOOL
+    {
+        $$ = $2;
+    }
+    | %empty
+    {
+        $$ = false;
+    }
+;
+
+type_spec:
+    TOKEN_TYPE_OPEN TOKEN_TYPE_INT TOKEN_TYPE_CLOSE
+    {
+        $$ = VarDecl::INT;
+    }
+    | TOKEN_TYPE_OPEN TOKEN_TYPE_BOOL TOKEN_TYPE_CLOSE
+    {
+        $$ = VarDecl::BOOL;
+    }
+    | TOKEN_TYPE_OPEN TOKEN_TYPE_CELL TOKEN_TYPE_CLOSE
+    {
+        $$ = VarDecl::CELL;
+    }
+;
+
+opt_dimensions:
+    %empty
+    {
+        $$ = std::vector<int>();
+    }
+    | TOKEN_DIMENSIONS_OPEN TOKEN_COUNT TOKEN_INT_LIT '>' dims_list TOKEN_DIMENSIONS_CLOSE
+    {
+        if ($3 != (int)$5.size()){ // несовпадение count и сколько объявлено измерений
+            std::cerr << "SEMANTIC ERROR: dimension count mismatch" << std::endl;
+            exit(1);
+        }
+        $$ = $5;
+    }
+;
+
+dims_list:
+    TOKEN_DIMENSION_OPEN TOKEN_INT_LIT TOKEN_DIMENSION_CLOSE
+    {
+        $$.push_back($2);
+    }
+    | dims_list TOKEN_DIMENSION_OPEN TOKEN_INT_LIN TOKEN_DIMENSION_CLOSE
+    {
+        $1.push_back($3);
+        $$ = $1;
+    }
+;
+
+opt_init_values:
+    %empty
+    {
+        $$ = std::vector<expr_ptr>();
+    }
+    | TOKEN_VALUES_OPEN value_list TOKEN_VALUES_CLOSE
+    {
+        $$ = $2;
+    }
+;
+
+value_list:
+    TOKEN_VALUE_OPEN expr TOKEN_VALUE_CLOSE
+    {
+        $$.push_back($2);
+    }
+    | value_list TOKEN_VALUE_OPEN expr TOKEN_VALUE_CLOSE
+    {
+        $1.push_back($3);
+        $$ = $1;
+    }
+;
+
+/*
+<FUNC name="main">
+    <LEFT>1</LEFT>
+    <ASSIGN>
+        <VALUE>42</VALUE>
+        <TO>x</TO>
+    </ASSIGN>
+    <CALL>helper</CALL>
+</FUNC>
+*/
+
+func_def:
+    TOKEN_FUNC_OPEN TOKEN_NAME_ATTR TOKEN_MAIN '>' stmt_list TOKEN_FUNC_CLOSE
+    {
+        $$.name_ = "main";
+        $$.body_ = $5;
+        $$.is_main_ = true;
+        has_main = true;
+    }
+    | TOKEN_FUNC_OPEN TOKEN_NAME_ATTR TOKEN_STRING '>' stmt_list TOKEN_FUNC_CLOSE
+    {
+        $$.name_ = $3;
+        $$.body_ = $5;
+        $$.is_main_ = false;
+    }
+;

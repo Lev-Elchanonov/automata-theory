@@ -11,6 +11,7 @@
 #include <cstring>
 
 #include "robot.tab.hpp"
+#include "ast.hpp"
 
 int line_num = 1;
 int error_count = 0;
@@ -18,6 +19,9 @@ int error_count = 0;
 void yyerror(const std::string* msg);
 using Token = yy::RobotParser::token;
 
+#define RETURN_TOK(tok) \
+    yylval->build<yy::RobotParser::symbol_type>(tok, yy::location(line_num, 1, line_num, 1 + yyleng)); \
+    return tok;
 %}
 
 DIGIT [0-9]
@@ -64,10 +68,10 @@ FALSE                       {yylval->build<bool>(false); return Token::TOKEN_BOO
 INT                         {return Token::TOKEN_TYPE_INT;}
 BOOL                        {return Token::TOKEN_TYPE_BOOL;}
 CELL                        {return Token::TOKEN_TYPE_CELL;}
-    EMPTY                       {yylval->build<int>(0); return Token::TOKEN_CELL_EMPTY;}
-    WALL                        {yylval->build<int>(1); return Token::TOKEN_CELL_WALL;}
-    EXIT                        {yylval->build<int>(2); return Token::TOKEN_CELL_EXIT;}
-    UNDEF                       {yylval->build<int>(3); return Token::TOKEN_CELL_UNDEF;}
+    EMPTY                       {yylval->build<CellValue>(CellValue::EMPTY); return Token::TOKEN_CELL_VALUE;}
+    WALL                        {yylval->build<CellValue>(CellValue::WALL); return Token::TOKEN_CELL_VALUE;}
+    EXIT                        {yylval->build<CellValue>(CellValue::EXIT); return Token::TOKEN_CELL_VALUE;}
+    UNDEF                       {yylval->build<CellValue>(CellValue::UNDEF); return Token::TOKEN_CELL_VALUE;}
 
 
 
