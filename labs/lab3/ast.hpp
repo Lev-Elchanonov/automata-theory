@@ -82,8 +82,8 @@ struct StmtNode;
 using stmt_ptr = std::shared_ptr<StmtNode>;
 
 struct ConditionBranch {
-    expr_ptr condition;
-    std::vector<stmt_ptr> body;
+    expr_ptr condition_;
+    std::vector<stmt_ptr> body_;
 };
 
 struct StmtNode {

@@ -336,3 +336,216 @@ func_def:
         $$.is_main_ = false;
     }
 ;
+
+stmt_list:
+    %empty { $$ = std::vector<stmt_ptr>(); }
+    | stmt_list stmt
+    {
+        $1.push_back($2);
+        $$ = $1;
+    }
+    | stmt_list error
+    {
+        std::cerr << "Syntax error in statement list. Skipping..." << std::endl;
+        yyerrok;
+        $$ = $1;
+    }
+;
+
+stmt:
+    assign_stmt { $$ = $1; }
+    | while_stmt { $$ = $1; }
+    | switch_stmt { $$ = $1; }
+    | move_stmt { $$ = $1; }
+    | call_stmt { $$ = $1; }
+    | getdrons_stmt { $$ = $1; }
+    | expr_stmt { $$ = $1; }
+;
+
+expr_stmt:
+    expr
+    {
+        auto statement = std::make_shared<StmtNode>(StmtNode::EXPR);
+        statement->expr_val = $1;
+        $$ = statement;
+    }
+;
+
+/*
+<ASSIGN>
+    <VALUE>10</VALUE>
+    <TO>x</TO>
+</ASSIGN>
+*/
+assign_stmt:
+    TOKEN_ASSIGN_OPEN TOKEN_VALUE_OPEN expr TOKEN_VALUE_CLOSE TOKEN_TO_OPEN var_ref_list TOKEN_TO_CLOSE TOKEN_ASSIGN_CLOSE
+    {
+        auto st = std::make_shared<StmtNode>(StmtNode::ASSIGN);
+        st->value_ = $3;
+        st->targets_ = $6;
+        $$ = st;
+    }
+;
+
+var_ref_list:
+    var_ref
+    {
+        $$.push_back($1);
+    }
+    | var_ref_list var_ref
+    {
+        $1.push_back($2);
+        $$ = $1;
+    }
+;
+
+/*
+<WHILE>
+    <CHECK>
+        ...
+    </CHECK>
+    <DO>
+        ...
+    </DO>
+</WHILE>
+*/
+while_stmt:
+    TOKEN_WHILE_OPEN TOKEN_CHECK_OPEN expr TOKEN_CHECK_CLOSE TOKEN_DO_OPEN stmt_list TOKEN_DO_CLOSE TOKEN_WHILE_CLOSE
+    {
+        auto st = std::make_shared<StmtNode>(StmtNode::WHILE);
+        st->while_cond_ = $3;
+        st->while_body_ = $6;
+        $$ = st;
+    }
+;
+
+/*
+<SWITCH>
+    <CONDITION>
+        <CHECK>
+
+        </CHECK>
+        <DO>
+
+        </DO>
+    </CONDITION>
+
+    <CONDITION>
+        <CHECK>
+
+        </CHECK>
+        <DO>
+
+        </DO>
+    </CONDITION>
+</SWITCH>
+*/
+switch_stmt:
+    TOKEN_SWITCH_OPEN cond_list TOKEN_SWITCH_CLOSE
+    {
+        auto st = std::make_shared<StmtNode>(StmtNode::SWITCH);
+        st->switch_cases_ = $2;
+        $$ = st;
+    }
+;
+
+cond_list:
+    cond_branch
+    {
+        $$.push_back($1);
+    }
+    | cond_list cond_branch
+    {
+        $1.push_back($2);
+        $$ = $1;
+    }
+;
+
+cond_branch:
+    TOKEN_CONDITION_OPEN TOKEN_CHECK_OPEN expr TOKEN_CHECK_CLOSE TOKEN_DO_OPEN stmt_list TOKEN_DO_CLOSE TOKEN_CONDITION_CLOSE
+    {
+        $$.condition_ = $3;
+        $$.body_ = $6;
+    }
+;
+
+/*
+<RIGHT>2</RIGHT>
+
+<RIGHT>
+    <MUL>
+        <VALUE>stepSize</VALUE>
+        <VALUE>3</VALUE>
+    </MUL>
+</RIGHT>
+*/
+move_stmt:
+    TOKEN_LEFT_OPEN expr TOKEN_LEFT_CLOSE
+    {
+        auto st = std::make_shared<StmtNode>(StmtNode::MOVE);
+        st->direction_ = StmtNode::LEFT;
+        st->distance_ = $2;
+        $$ = st;
+    }
+    | TOKEN_RIGHT_OPEN expr TOKEN_RIGHT_CLOSE
+    {
+        auto st = std::make_shared<StmtNode>(StmtNode::MOVE);
+        st->direction_ = StmtNode::RIGHT;
+        st->distance_ = $2;
+        $$ = st;
+    }
+    | TOKEN_UP_OPEN expr TOKEN_UP_CLOSE
+    {
+        auto st = std::make_shared<StmtNode>(StmtNode::MOVE);
+        st->direction_ = StmtNode::UP;
+        st->distance_ = $2;
+        $$ = st;
+    }
+    | TOKEN_DOWN_OPEN expr TOKEN_DOWN_CLOSE
+    {
+        auto st = std::make_shared<StmtNode>(StmtNode::MOVE);
+        st->direction_ = StmtNode::DOWN;
+        st->distance_ = $2;
+        $$ = st;
+    }
+;
+
+/*
+<CALL>scan</CALL>
+*/
+call_stmt:
+    TOKEN_CALL_OPEN TOKEN_STRING TOKEN_CALL_CLOSE
+    {
+        auto st = std::make_shared<StmtNode>(StmtNode::CALL);
+        st->call_name_ = $2;
+        $$ = st;
+    }
+;
+
+/*
+<GETDRONSCOUNT>dronesLeft</GETDRONSCOUNT>
+*/
+getdrons_stmt:
+    TOKEN_GETDRONSCOUNT_OPEN var_ref TOKEN_GETDRONSCOUNT_CLOSE
+    {
+        auto st = std::make_shared<StmtNode>(StmtNode::GETDRONSCOUNT);
+        st->dron_target_ = $2;
+        $$ = st;
+    }
+;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
