@@ -33,11 +33,11 @@
         VarDecl decl_;
         std::vector<int> array_values_;
         bool initialized_ = false;
-    }
+    };
     std::map<std::string, SymbolInfo> global_symbols;
     std::map<std::string, FuncDecl> functions;
 
-    vod yyerror(const std::sting& msg){
+    void yyerror(const std::string& msg){
         std::cerr << "SYNTAX ERROR: " << msg << std::endl;
     }
 }
@@ -135,9 +135,9 @@
 %type <std::vector<expr_ptr>> value_list opt_init_values // список значений (объявлены либо опционально)
 
 %type <expr_ptr> expr primary_expr var_ref // (expr - указатель на узел выражения; primary - базовое выражение без операторов; var_ref - ссылка на переменную)
-%type <std::vector<expr_ptr>> expr_list opt_expr_list var_ref_list //(expr_list - список выражения (аргументы для ADD и тд). Может быть опционален или состоять из ссылок)
+%type <std::vector<expr_ptr>> expr_list opt_expr_list var_ref_list dim_ref_list //(expr_list - список выражения (аргументы для ADD и тд). Может быть опционален или состоять из ссылок)
 
-%type <stmt_ptr> stmt assign_stmt while_stmt switch_stmt move_stmt call_stmt getdrons_stmt // (указатель на узел любой инструкции)
+%type <stmt_ptr> expr_stmt stmt assign_stmt while_stmt switch_stmt move_stmt call_stmt getdrons_stmt // (указатель на узел любой инструкции)
 %type <std::vector<stmt_ptr>> stmt_list // список инструкций
 %type <ConditionBranch> cond_branch // ветка условия
 %type <std::vector<ConditionBranch>> cond_list // список веток условий для switch
@@ -165,13 +165,13 @@ program_items:
     | program_items vardecl_block
     | program_items func_def
     {
-        if (!$2.name.empty()){
-            if (functions.find($2.name) != functions.end()){
-                std::cerr << "SEMANTIC ERROR: function '" << $2.name << "' already defined" << std::endl;
+        if (!$2.name_.empty()){
+            if (functions.find($2.name_) != functions.end()){
+                std::cerr << "SEMANTIC ERROR: function '" << $2.name_ << "' already defined" << std::endl;
                 exit(1);
             }
-            functions[$2.name] = $2;
-            std::cout << "Function defined: " << $2.name << std::endl;
+            functions[$2.name_] = $2;
+            std::cout << "Function defined: " << $2.name_ << std::endl;
         }
     }
     | program_items error
@@ -185,14 +185,14 @@ vardecl_block:
     TOKEN_VARDECL_OPEN var_list TOKEN_VARDECL_CLOSE
     {
         for (const auto& decl : $2){
-            if (global_symbols.find(decl.name) != global_symbols.end()){
-                std::cerr << "SEMANTIC ERROR: variable '" << decl.name << "' already declared" << std::endl;
+            if (global_symbols.find(decl.name_) != global_symbols.end()){
+                std::cerr << "SEMANTIC ERROR: variable '" << decl.name_ << "' already declared" << std::endl;
 
             }
             SymbolInfo info;
-            info.decl = decl;
-            global_symbols[decl.name] = info;
-            std::cout << "Variable declared: " << decl.name << "(type: " << decl.type << ")" << std::endl;
+            info.decl_ = decl;
+            global_symbols[decl.name_] = info;
+            std::cout << "Variable declared: " << decl.name_ << "(type: " << decl.type_ << ")" << std::endl;
         }
     }
 ;
@@ -280,7 +280,7 @@ dims_list:
     {
         $$.push_back($2);
     }
-    | dims_list TOKEN_DIMENSION_OPEN TOKEN_INT_LIN TOKEN_DIMENSION_CLOSE
+    | dims_list TOKEN_DIMENSION_OPEN TOKEN_INT_LIT TOKEN_DIMENSION_CLOSE
     {
         $1.push_back($3);
         $$ = $1;
@@ -366,7 +366,7 @@ expr_stmt:
     expr
     {
         auto statement = std::make_shared<StmtNode>(StmtNode::EXPR);
-        statement->expr_val = $1;
+        statement->expr_val_ = $1;
         $$ = statement;
     }
 ;
@@ -534,14 +534,176 @@ getdrons_stmt:
     }
 ;
 
+/*
+<ADD>
+    <VALUE>5</VALUE>
+    <VALUE>3</VALUE>
+</ADD>
+*/
+expr:
+    primary_expr
+    {
+        $$ = $1;
+    }
+    | TOKEN_ADD_OPEN opt_expr_list TOKEN_ADD_CLOSE
+    {
+        auto ad = std::make_shared<ExprNode>(ExprNode::ADD);
+        ad->args_ = $2;
+        $$ = ad;
+    }
+    | TOKEN_MUL_OPEN opt_expr_list TOKEN_MUL_CLOSE
+    {
+        auto mu = std::make_shared<ExprNode>(ExprNode::MUL);
+        mu->args_ = $2;
+        $$ = mu;
+    }
+    | TOKEN_SUB_OPEN expr expr TOKEN_SUB_CLOSE
+    {
+        auto su = std::make_shared<ExprNode>(ExprNode::SUB);
+        su->args_.push_back($2);
+        su->args_.push_back($3);
+        $$ = su;
+    }
+    | TOKEN_DIV_OPEN expr expr TOKEN_DIV_CLOSE
+    {
+        auto di = std::make_shared<ExprNode>(ExprNode::DIV);
+        di->args_.push_back($2);
+        di->args_.push_back($3);
+        $$ = di;
+    }
+    | TOKEN_AND_OPEN opt_expr_list TOKEN_AND_CLOSE
+    {
+        auto a = std::make_shared<ExprNode>(ExprNode::AND);
+        a->args_ = $2;
+        $$ = a;
+    }
+    | TOKEN_OR_OPEN opt_expr_list TOKEN_OR_CLOSE
+    {
+        auto o = std::make_shared<ExprNode>(ExprNode::OR);
+        o->args_ = $2;
+        $$ = o;
+    }
+    | TOKEN_NOT_OPEN expr TOKEN_NOT_CLOSE
+    {
+        auto n = std::make_shared<ExprNode>(ExprNode::NOT);
+        n->args_.push_back($2);
+        $$ = n;
+    }
+    | TOKEN_EQ_OPEN opt_expr_list TOKEN_EQ_CLOSE
+    {
+        auto eq = std::make_shared<ExprNode>(ExprNode::EQ);
+        eq->args_ = $2;
+        $$ = eq;
+    }
+    | TOKEN_MAX_OPEN opt_expr_list TOKEN_MAX_CLOSE
+    {
+        auto ma = std::make_shared<ExprNode>(ExprNode::MAX);
+        ma->args_ = $2;
+        $$ = ma;
+    }
+    | TOKEN_MIN_OPEN opt_expr_list TOKEN_MIN_CLOSE
+    {
+        auto mi = std::make_shared<ExprNode>(ExprNode::MIN);
+        mi->args_ = $2;
+        $$ = mi;
+    }
+    | TOKEN_SENDDRONS_OPEN expr TOKEN_SENDDRONS_CLOSE
+    {
+        auto drons = std::make_shared<ExprNode>(ExprNode::SENDDRONS);
+        drons->args_.push_back($2);
+        $$ = drons;
+    }
+    | TOKEN_CALL_OPEN TOKEN_STRING TOKEN_CALL_CLOSE
+    {
+        auto call = std::make_shared<ExprNode>(ExprNode::CALL);
+        call->var_name_ = $2;
+        $$ = call;
+    }
+;
 
+opt_expr_list:
+    %empty
+    {
+        $$ = std::vector<expr_ptr>();
+    }
+    | expr_list
+    {
+        $$ = $1;
+    }
+;
 
+expr_list:
+    expr
+    {
+        $$.push_back($1);
+    }
+    | expr_list expr
+    {
+        $1.push_back($2);
+        $$ = $1;
+    }
+;
 
+primary_expr:
+    TOKEN_INT_LIT
+    {
+        $$ = ExprNode::make_int($1);
+    }
+    | TOKEN_BOOL_LIT
+    {
+        $$ = ExprNode::make_bool($1);
+    }
+    | TOKEN_CELL_VALUE
+    {
+        $$ = ExprNode::make_cell($1);
+    }
+    | var_ref
+    {
+        $$ = $1;
+    }
+;
 
+/*
+<имя_массива>
+    <DIM><INDEX>индекс1</INDEX></DIM>
+    <DIM><INDEX>индекс2</INDEX></DIM>
+    ...
+</имя_массива>
+*/
+var_ref:
+    TOKEN_IDENTIFIER
+    {
+        auto iden = ExprNode::make_var_ref($1);
+        $$ = iden;
+    }
+    | TOKEN_IDENTIFIER dim_ref_list
+    {
+        auto iden = ExprNode::make_var_ref($1);
+        for (auto& idx : $2) {
+            iden->indices_.push_back(idx);
+        }
+        $$ = iden;
+    }
+;
 
+dim_ref_list:
+    TOKEN_DIM_OPEN TOKEN_INDEX_OPEN expr TOKEN_INDEX_CLOSE TOKEN_DIM_CLOSE
+    {
+        $$ = std::vector<expr_ptr>();
+        $$.push_back($3);
+    }
+    | dim_ref_list TOKEN_DIM_OPEN TOKEN_INDEX_OPEN expr TOKEN_INDEX_CLOSE TOKEN_DIM_CLOSE
+    {
+        $1.push_back($4);
+        $$ = $1;
+    }
+;
 
+%%
 
-
+void yy::RobotParser::error(const location_type& loc, const std::string& msg) {
+    std::cerr << "Error at " << loc << ": " << msg << std::endl;
+}
 
 
 
