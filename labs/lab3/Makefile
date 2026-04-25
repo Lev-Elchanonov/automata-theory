@@ -26,14 +26,29 @@ $(GENDIR)/robot.lex.cpp: robot_lexer.l $(GENDIR)/robot.tab.hpp RobotLexer.h ast.
 
 # ----------- КОМПИЛЯЦИЯ -----------
 
-$(GENDIR)/$(TARGET): main.cpp \
-                     $(GENDIR)/robot.tab.cpp \
-                     $(GENDIR)/robot.lex.cpp \
-                     RobotLexer.h ast.hpp
+# Объектные файлы
+$(GENDIR)/robot.tab.o: $(GENDIR)/robot.tab.cpp $(GENDIR)/robot.tab.hpp ast.hpp RobotLexer.h
+	$(CXX) $(CXXFLAGS) -c $(GENDIR)/robot.tab.cpp -o $@
+
+$(GENDIR)/robot.lex.o: $(GENDIR)/robot.lex.cpp $(GENDIR)/robot.tab.hpp RobotLexer.h ast.hpp
+	$(CXX) $(CXXFLAGS) -c $(GENDIR)/robot.lex.cpp -o $@
+
+$(GENDIR)/interpreter.o: interpreter.cpp ast.hpp RobotLexer.h
+	$(CXX) $(CXXFLAGS) -c interpreter.cpp -o $@
+
+$(GENDIR)/main.o: main.cpp RobotLexer.h $(GENDIR)/robot.tab.hpp
+	$(CXX) $(CXXFLAGS) -c main.cpp -o $@
+
+# Линковка
+$(GENDIR)/$(TARGET): $(GENDIR)/main.o \
+                     $(GENDIR)/robot.tab.o \
+                     $(GENDIR)/robot.lex.o \
+                     $(GENDIR)/interpreter.o
 	$(CXX) $(CXXFLAGS) -o $@ \
-		main.cpp \
-		$(GENDIR)/robot.tab.cpp \
-		$(GENDIR)/robot.lex.cpp
+		$(GENDIR)/main.o \
+		$(GENDIR)/robot.tab.o \
+		$(GENDIR)/robot.lex.o \
+		$(GENDIR)/interpreter.o
 
 # ----------- ДИРЕКТОРИЯ -----------
 

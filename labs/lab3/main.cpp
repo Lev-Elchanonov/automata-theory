@@ -2,6 +2,7 @@
 #include <fstream>
 #include "RobotLexer.h"
 #include "robot.tab.hpp"
+#include "interpreter.cpp"
 
 int main(int argc, char* argv[]) {
     if (argc != 2) {
@@ -29,5 +30,8 @@ int main(int argc, char* argv[]) {
         std::cerr << "Parsing failed with " << result << " errors." << std::endl;
     }
 
+    Interpreter interpreter(nullptr);
+    interpreter.initialize_variables();
+    interpreter.run();
     return result;
 }

@@ -1,0 +1,39 @@
+<PROGRAM>
+    <VARDECLARATION>
+        <VAR name="exit_x">
+            <TYPE>
+                INT
+            </TYPE>
+        </VAR>
+    </VARDECLARATION>
+    <FUNC name="main">
+        <ASSIGN>
+            <VALUE>
+                <MUL>
+                    <VALUE>1</VALUE>
+                    <VALUE>3</VALUE>
+                </MUL>
+            </VALUE>
+            <TO>exit_x</TO>
+        </ASSIGN>
+        <WHILE>
+            <CHECK>
+                <NOT>
+                    <EQ>
+                        <VALUE>
+                            exit_x
+                        </VALUE>
+                        <VALUE>
+                            0
+                        </VALUE>
+                    </EQ>
+                </NOT>
+            </CHECK>
+            <DO>
+                <RIGHT>
+                    1
+                </RIGHT>
+            </DO>
+        </WHILE>
+    </FUNC>
+</PROGRAM>

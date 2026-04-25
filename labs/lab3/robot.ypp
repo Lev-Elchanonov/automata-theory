@@ -190,6 +190,7 @@ program_items:
                 exit(1);
             }
             functions[$2.name_] = $2;
+            has_main = true;
             std::cout << "Function defined: " << $2.name_ << std::endl;
         }
     }
@@ -197,6 +198,7 @@ program_items:
     {
         std::cerr << "Syntax error in global scope" << std::endl;
         yyerrok;
+        exit(1);
     }
 ;
 
@@ -377,6 +379,7 @@ stmt_list:
     {
         std::cerr << "Syntax error in statement list. Skipping..." << std::endl;
         yyerrok;
+        exit(1);
         $$ = $1;
     }
 ;
@@ -593,6 +596,10 @@ expr:
     primary_expr
     {
         $$ = $1;
+    }
+    | TOKEN_VALUE_OPEN expr TOKEN_VALUE_CLOSE
+    {
+        $$ = $2;
     }
     | TOKEN_ADD_OPEN opt_expr_list TOKEN_ADD_CLOSE
     {
