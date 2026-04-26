@@ -1,0 +1,396 @@
+<PROGRAM>
+    <VARDECLARATION>
+        <VAR name="x" CONST="false">
+            <TYPE>INT</TYPE>
+        </VAR>
+        <VAR name="x" CONST="false">
+            <TYPE>BOOL</TYPE>
+        </VAR>
+    </VARDECLARATION>
+
+    <VARDECLARATION>
+        <VAR name="broken_matrix" CONST="false">
+            <TYPE>INT</TYPE>
+            <DIMENSIONS count="3">
+                <DIMENSION>2</DIMENSION>
+                <DIMENSION>3</DIMENSION>
+            </DIMENSIONS>
+        </VAR>
+    </VARDECLARATION>
+
+    <VARDECLARATION>
+        <VAR name="matrix" CONST="false">
+            <TYPE>INT</TYPE>
+            <DIMENSIONS count="2">
+                <DIMENSION>2</DIMENSION>
+                <DIMENSION>2</DIMENSION>
+            </DIMENSIONS>
+            <VALUES>
+                <VALUE>1</VALUE>
+                <VALUE>2</VALUE>
+                <VALUE>3</VALUE>
+            </VALUES>
+        </VAR>
+    </VARDECLARATION>
+
+    <FUNC name="main">
+        <RIGHT>1</RIGHT>
+    </FUNC>
+
+    <FUNC name="main">
+        <LEFT>1</LEFT>
+    </FUNC>
+
+    <FUNC name="helper">
+        <UP>1</UP>
+    </FUNC>
+
+    <FUNC name="helper">
+        <DOWN>1</DOWN>
+    </FUNC>
+    <FUNC name="not_main">
+        <RIGHT>1</RIGHT>
+    </FUNC>
+
+
+
+    <VARDECLARATION>
+        <VAR name="y" CONST="false">
+            <TYPE>INT</TYPE>
+        </VAR>
+    </VARDECLARATION>
+    <FUNC name="main">
+        <ASSIGN>
+            <VALUE>42</VALUE>
+            <TO>z</TO>
+        </ASSIGN>
+    </FUNC>
+
+
+
+    <VARDECLARATION>
+        <VAR name="const_var" CONST="true">
+            <TYPE>INT</TYPE>
+        </VAR>
+    </VARDECLARATION>
+    <FUNC name="change_const">
+        <ASSIGN>
+            <VALUE>100</VALUE>
+            <TO>const_var</TO>
+        </ASSIGN>
+    </FUNC>
+
+
+
+    <VARDECLARATION>
+        <VAR name="flag" CONST="false">
+            <TYPE>BOOL</TYPE>
+        </VAR>
+    </VARDECLARATION>
+    <FUNC name="diff_types">
+        <ASSIGN>
+            <VALUE>
+                <ADD>
+                    <VALUE>5</VALUE>
+                    <VALUE>true</VALUE>
+                </ADD>
+            </VALUE>
+            <TO>flag</TO>
+        </ASSIGN>
+    </FUNC>
+
+
+    <VARDECLARATION>
+        <VAR name="res" CONST="false">
+            <TYPE>BOOL</TYPE>
+        </VAR>
+    </VARDECLARATION>
+    <FUNC name="diff_types2">
+        <ASSIGN>
+            <VALUE>
+                <AND>
+                    <VALUE>true</VALUE>
+                    <VALUE>42</VALUE>
+                </AND>
+            </VALUE>
+            <TO>res</TO>
+        </ASSIGN>
+    </FUNC>
+
+    <VARDECLARATION>
+        <VAR name="res_another" CONST="false">
+            <TYPE>BOOL</TYPE>
+        </VAR>
+    </VARDECLARATION>
+    <FUNC name="diff_types3">
+        <ASSIGN>
+            <VALUE>
+                <ADD>
+                    <VALUE>100</VALUE>
+                    <VALUE>42</VALUE>
+                </ADD>
+            </VALUE>
+            <TO>res_another</TO>
+        </ASSIGN>
+    </FUNC>
+
+    <VARDECLARATION>
+        <VAR name="zer" CONST="false">
+            <TYPE>INT</TYPE>
+        </VAR>
+    </VARDECLARATION>
+    <FUNC name="zero_dev">
+        <ASSIGN>
+            <VALUE>
+                <DIV>
+                    <VALUE>10</VALUE>
+                    <VALUE>0</VALUE>
+                </DIV>
+            </VALUE>
+            <TO>zer</TO>
+        </ASSIGN>
+    </FUNC>
+
+
+    <FUNC name="nonex">
+        <CALL>nonexistent</CALL>
+    </FUNC>
+
+
+
+    <FUNC name="check_diff_types">
+        <WHILE>
+            <CHECK>
+                <EQ>
+                    <VALUE>42</VALUE>
+                    <VALUE>true</VALUE>
+                </EQ>
+            </CHECK>
+            <DO>
+                <RIGHT>1</RIGHT>
+            </DO>
+        </WHILE>
+    </FUNC>
+
+
+
+
+    <FUNC name="check_add">
+        <WHILE>
+            <CHECK>
+                <ADD>
+                    <VALUE>1</VALUE>
+                    <VALUE>2</VALUE>
+                </ADD>
+            </CHECK>
+            <DO>
+                <RIGHT>1</RIGHT>
+            </DO>
+        </WHILE>
+    </FUNC>
+
+
+    <VARDECLARATION>
+        <VAR name="matrix2" CONST="false">
+            <TYPE>INT</TYPE>
+            <DIMENSIONS count="2">
+                <DIMENSION>3</DIMENSION>
+                <DIMENSION>3</DIMENSION>
+            </DIMENSIONS>
+        </VAR>
+    </VARDECLARATION>
+    <FUNC name="not_add_indices">
+        <ASSIGN>
+            <VALUE>99</VALUE>
+            <TO>matrix2
+                <DIM><INDEX>0</INDEX></DIM>
+            </TO>
+        </ASSIGN>
+    </FUNC>
+
+
+    <VARDECLARATION>
+        <VAR name="matrix3" CONST="false">
+            <TYPE>INT</TYPE>
+            <DIMENSIONS count="2">
+                <DIMENSION>3</DIMENSION>
+                <DIMENSION>3</DIMENSION>
+            </DIMENSIONS>
+        </VAR>
+    </VARDECLARATION>
+    <FUNC name="not_correct_indices">
+        <ASSIGN>
+            <VALUE>99</VALUE>
+            <TO>matrix
+                <DIM><INDEX>0</INDEX></DIM>
+                <DIM><INDEX>true</INDEX></DIM>
+            </TO>
+        </ASSIGN>
+    </FUNC>
+
+
+
+    <VARDECLARATION>
+        <VAR name="var" CONST="false">
+            <TYPE>INT</TYPE>
+        </VAR>
+    </VARDECLARATION>
+    <FUNC name="max_incorrect">
+        <ASSIGN>
+            <VALUE>
+                <MAX>
+                    <VALUE>5</VALUE>
+                    <VALUE>true</VALUE>
+                </MAX>
+            </VALUE>
+            <TO>var</TO>
+        </ASSIGN>
+    </FUNC>
+
+
+    <VARDECLARATION>
+        <VAR name="var2" CONST="false">
+            <TYPE>INT</TYPE>
+        </VAR>
+    </VARDECLARATION>
+    <FUNC name="min_incorrect">
+        <ASSIGN>
+            <VALUE>
+                <MIN>
+                    <VALUE>5</VALUE>
+                    <VALUE>false</VALUE>
+                </MIN>
+            </VALUE>
+            <TO>var2</TO>
+        </ASSIGN>
+    </FUNC>
+
+
+    <VARDECLARATION>
+        <VAR name="var3" CONST="false">
+            <TYPE>INT</TYPE>
+        </VAR>
+    </VARDECLARATION>
+    <FUNC name="mul_incorrect">
+        <ASSIGN>
+            <VALUE>
+                <MUL>
+                    <VALUE>3</VALUE>
+                    <VALUE>false</VALUE>
+                </MUL>
+            </VALUE>
+            <TO>var3</TO>
+        </ASSIGN>
+    </FUNC>
+
+
+    <VARDECLARATION>
+        <VAR name="var4" CONST="false">
+            <TYPE>INT</TYPE>
+        </VAR>
+    </VARDECLARATION>
+    <FUNC name="sub_incorrect">
+        <ASSIGN>
+            <VALUE>
+                <SUB>
+                    <VALUE>10</VALUE>
+                    <VALUE>true</VALUE>
+                </SUB>
+            </VALUE>
+            <TO>var4</TO>
+        </ASSIGN>
+    </FUNC>
+
+
+    <VARDECLARATION>
+        <VAR name="var5" CONST="false">
+            <TYPE>INT</TYPE>
+        </VAR>
+    </VARDECLARATION>
+    <FUNC name="div_incorrect">
+        <ASSIGN>
+            <VALUE>
+                <DIV>
+                    <VALUE>10</VALUE>
+                    <VALUE>false</VALUE>
+                </DIV>
+            </VALUE>
+            <TO>var5</TO>
+        </ASSIGN>
+    </FUNC>
+
+
+    <VARDECLARATION>
+        <VAR name="flag3" CONST="false">
+            <TYPE>BOOL</TYPE>
+        </VAR>
+    </VARDECLARATION>
+    <FUNC name="assign_what">
+        <ASSIGN>
+            <VALUE>
+                <NOT>
+                    <VALUE>42</VALUE>
+                </NOT>
+            </VALUE>
+            <TO>flag3</TO>
+        </ASSIGN>
+    </FUNC>
+
+
+    <VARDECLARATION>
+        <VAR name="result2" CONST="false">
+            <TYPE>BOOL</TYPE>
+        </VAR>
+    </VARDECLARATION>
+    <FUNC name="or_non_boolean">
+        <ASSIGN>
+            <VALUE>
+                <OR>
+                    <VALUE>true</VALUE>
+                    <VALUE>10</VALUE>
+                </OR>
+            </VALUE>
+            <TO>result2</TO>
+        </ASSIGN>
+    </FUNC>
+
+
+
+    <FUNC name="check_add2">
+        <SWITCH>
+            <CONDITION>
+                <CHECK>
+                    <ADD>
+                        <VALUE>1</VALUE>
+                        <VALUE>2</VALUE>
+                    </ADD>
+                </CHECK>
+                <DO>
+                    <RIGHT>1</RIGHT>
+                </DO>
+            </CONDITION>
+        </SWITCH>
+    </FUNC>
+
+
+    <FUNC name="undef_var">
+        <ASSIGN>
+            <VALUE>42</VALUE>
+            <TO>undefined_var</TO>
+        </ASSIGN>
+    </FUNC>
+</PROGRAM>
+
+
+
+
+
+
+
+
+
+
+
+
+
+

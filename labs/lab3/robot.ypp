@@ -212,7 +212,7 @@ program_items:
     {
         if (!$2.name_.empty()){
             if (functions.find($2.name_) != functions.end()){
-                add_semantic_error(@2.begin.line, @2.begin.column, "SEMANTIC ERROR: function ' + $2.name_ ' + already defined");
+                add_semantic_error(@2.begin.line, @2.begin.column, "SEMANTIC ERROR: function '" + $2.name_ + "' already defined");
             }
             else {
                 functions[$2.name_] = $2;
@@ -291,9 +291,9 @@ var_item:
     }
 ;
 opt_const:
-    TOKEN_CONST TOKEN_BOOL
+    TOKEN_CONST TOKEN_STRING
     {
-        $$ = $2;
+        $$ = ($2 == "true");
     }
     | %empty
     {
@@ -450,7 +450,20 @@ assign_stmt:
             }
             if (it->second.decl_.is_const_){
                 add_semantic_error(@6.begin.line, @6.begin.column, "assignment to const variable '" + var->var_name_ + "'");
+                continue;
             }
+            VarDecl::VarType var_type = it->second.decl_.type_;
+            ExprNode::ValueType expr_type = $3->value_type_;
+
+             if (var_type == VarDecl::INT && expr_type != ExprNode::TYPE_INT){
+                add_semantic_error(@6.begin.line, @6.begin.column, "type mismatch: cannot assign non-INT to INT variable '" + var->var_name_ + "'");
+             }
+             else if (var_type == VarDecl::BOOL && expr_type != ExprNode::TYPE_BOOL){
+                add_semantic_error(@6.begin.line, @6.begin.column, "type mismatch: cannot assign non-BOOL to BOOL variable '" + var->var_name_ + "'");
+             }
+             else if (var_type == VarDecl::CELL && expr_type != ExprNode::TYPE_CELL){
+                add_semantic_error(@6.begin.line, @6.begin.column, "type mismatch: cannot assign non-CELL to CELL variable '" + var->var_name_ + "'");
+             }
         }
 
         auto st = std::make_shared<StmtNode>(StmtNode::ASSIGN);
@@ -766,7 +779,7 @@ expr:
     {
         auto drons = std::make_shared<ExprNode>(ExprNode::SENDDRONS);
         drons->args_.push_back($2);
-        drons->value_type_ = ExprNode::TYPE_INT;
+        drons->value_type_ = ExprNode::TYPE_CELL;
         $$ = drons;
     }
 ;
