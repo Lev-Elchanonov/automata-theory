@@ -28,7 +28,6 @@ type Game struct {
 	drones      [][]Point
 	dronesCount int
 
-	// Карта разведанных клеток: -1 = не разведано, 0 = EMPTY, 1 = WALL, 2 = EXIT
 	explored [][]int
 
 	message      string
@@ -78,8 +77,8 @@ var (
 
 	// Цвета
 	undefColor    = color.RGBA{60, 60, 60, 255}    // неразведано - темно-серый
-	emptyExplored = color.RGBA{144, 238, 144, 255} // пусто - салатовый (light green)
-	exitExplored  = color.RGBA{0, 100, 0, 255}     // выход - темно-зеленый (dark green)
+	emptyExplored = color.RGBA{144, 238, 144, 255} // пусто - салатовый
+	exitExplored  = color.RGBA{0, 100, 0, 255}     // выход - темно-зеленый
 	wallExplored  = color.RGBA{255, 50, 50, 255}   // стена - красный
 	robotColor    = color.RGBA{50, 50, 255, 255}   // робот - синий
 	brokenColor   = color.RGBA{255, 0, 0, 255}     // сломан - красный
@@ -101,7 +100,6 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 	screen.Fill(bgColor)
 
-	// Вычисляем масштаб чтобы карта всегда помещалась
 	sw, sh := screen.Bounds().Dx(), screen.Bounds().Dy()
 	scaleX := float64(sw-40) / float64(g.width*cellSize)
 	scaleY := float64(sh-40) / float64(g.height*cellSize)
@@ -116,12 +114,10 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	offsetX := (float64(sw) - float64(g.width*cellSize)*scale) / 2
 	offsetY := (float64(sh) - float64(g.height*cellSize)*scale) / 2
 
-	// Рисуем поле - ВСЕГДА показываем реальную карту
 	for y := 0; y < g.height; y++ {
 		for x := 0; x < g.width; x++ {
 			var col color.Color
 
-			// Всегда показываем реальное состояние клетки
 			switch g.field[y][x] {
 			case 0:
 				col = emptyExplored // EMPTY - салатовый
@@ -137,14 +133,12 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		}
 	}
 
-	// Рисуем дронов
 	for _, path := range g.drones {
 		for _, p := range path {
 			drawDroneScaled(screen, p.X, p.Y, droneColor, scale, offsetX, offsetY)
 		}
 	}
 
-	// Рисуем робота
 	robotCol := robotColor
 	if g.robotBroken {
 		robotCol = brokenColor
@@ -155,7 +149,6 @@ func (g *Game) Draw(screen *ebiten.Image) {
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
-	// Возвращаем внешние размеры окна
 	return outsideWidth, outsideHeight
 }
 
@@ -284,10 +277,10 @@ func handleCommand(cmd Command) {
 	case "robot_status":
 		if cmd.Status == "broken" {
 			game.robotBroken = true
-			fmt.Println("💥 ROBOT BROKEN:", cmd.Message)
+			fmt.Println("--ROBOT BROKEN:", cmd.Message)
 		} else if cmd.Status == "exit_found" {
 			game.exitFound = true
-			fmt.Println("🎯 EXIT FOUND!")
+			fmt.Println("--EXIT FOUND!")
 		}
 		game.message = cmd.Message
 
@@ -303,13 +296,13 @@ func handleCommand(cmd Command) {
 			}
 		}
 
-		fmt.Printf("🛸 Drones: %d launched, %d remaining\n", cmd.Count, cmd.DronesRemaining)
+		fmt.Printf("--Drones: %d launched, %d remaining\n", cmd.Count, cmd.DronesRemaining)
 
 	case "drone_count_queried":
 		game.dronesCount = cmd.Count
 
 	case "function_call":
-		fmt.Printf("📞 Calling: %s\n", cmd.Name)
+		fmt.Printf("--Calling: %s\n", cmd.Name)
 
 	case "finished":
 		game.robotX = cmd.FinalX
@@ -317,7 +310,7 @@ func handleCommand(cmd Command) {
 		game.robotBroken = cmd.RobotBroken
 		fmt.Printf("=== FINISHED === Robot at (%d,%d)\n", cmd.FinalX, cmd.FinalY)
 		if cmd.RobotBroken {
-			fmt.Println("💥 Robot is BROKEN")
+			fmt.Println("--Robot is BROKEN")
 		}
 
 	case "exit":

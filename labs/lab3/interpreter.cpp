@@ -341,7 +341,6 @@ private:
                 int x = p["x"];
                 int y = p["y"];
                 scan[y * FIELD_WIDTH + x] = field[y][x];
-                std::cerr << "field[" << y << "]" << "[" << x << "]" << " == " << field[y][x] << std::endl;
             }
         }
 
