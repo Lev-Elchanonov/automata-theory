@@ -53,7 +53,7 @@
 #  endif
 # endif
 
-#line 76 "robot.ypp"
+#line 92 "robot.ypp"
 namespace  yy  {
 #line 59 "generated/location.hh"
 
@@ -299,7 +299,7 @@ namespace  yy  {
     return ostr;
   }
 
-#line 76 "robot.ypp"
+#line 92 "robot.ypp"
 } //  yy 
 #line 305 "generated/location.hh"
 

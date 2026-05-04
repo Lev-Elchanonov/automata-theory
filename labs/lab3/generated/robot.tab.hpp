@@ -190,7 +190,7 @@
 # define YYDEBUG 1
 #endif
 
-#line 76 "robot.ypp"
+#line 92 "robot.ypp"
 namespace  yy  {
 #line 196 "generated/robot.tab.hpp"
 
@@ -395,6 +395,7 @@ namespace  yy  {
       char dummy2[sizeof (ConditionBranch)];
 
       // func_def
+      // func_header
       char dummy3[sizeof (FuncDecl)];
 
       // var_item
@@ -443,6 +444,7 @@ namespace  yy  {
       char dummy14[sizeof (std::vector<stmt_ptr>)];
 
       // stmt
+      // vardecl_stmt
       // expr_stmt
       // assign_stmt
       // while_stmt
@@ -703,24 +705,26 @@ namespace  yy  {
         S_opt_init_values = 98,                  // opt_init_values
         S_value_list = 99,                       // value_list
         S_func_def = 100,                        // func_def
-        S_stmt_list = 101,                       // stmt_list
-        S_stmt = 102,                            // stmt
-        S_expr_stmt = 103,                       // expr_stmt
-        S_assign_stmt = 104,                     // assign_stmt
-        S_var_ref_list = 105,                    // var_ref_list
-        S_while_stmt = 106,                      // while_stmt
-        S_switch_stmt = 107,                     // switch_stmt
-        S_cond_list = 108,                       // cond_list
-        S_cond_branch = 109,                     // cond_branch
-        S_move_stmt = 110,                       // move_stmt
-        S_call_stmt = 111,                       // call_stmt
-        S_getdrons_stmt = 112,                   // getdrons_stmt
-        S_expr = 113,                            // expr
-        S_opt_expr_list = 114,                   // opt_expr_list
-        S_expr_list = 115,                       // expr_list
-        S_primary_expr = 116,                    // primary_expr
-        S_var_ref = 117,                         // var_ref
-        S_dim_ref_list = 118                     // dim_ref_list
+        S_func_header = 101,                     // func_header
+        S_stmt_list = 102,                       // stmt_list
+        S_stmt = 103,                            // stmt
+        S_vardecl_stmt = 104,                    // vardecl_stmt
+        S_expr_stmt = 105,                       // expr_stmt
+        S_assign_stmt = 106,                     // assign_stmt
+        S_var_ref_list = 107,                    // var_ref_list
+        S_while_stmt = 108,                      // while_stmt
+        S_switch_stmt = 109,                     // switch_stmt
+        S_cond_list = 110,                       // cond_list
+        S_cond_branch = 111,                     // cond_branch
+        S_move_stmt = 112,                       // move_stmt
+        S_call_stmt = 113,                       // call_stmt
+        S_getdrons_stmt = 114,                   // getdrons_stmt
+        S_expr = 115,                            // expr
+        S_opt_expr_list = 116,                   // opt_expr_list
+        S_expr_list = 117,                       // expr_list
+        S_primary_expr = 118,                    // primary_expr
+        S_var_ref = 119,                         // var_ref
+        S_dim_ref_list = 120                     // dim_ref_list
       };
     };
 
@@ -766,6 +770,7 @@ namespace  yy  {
         break;
 
       case symbol_kind::S_func_def: // func_def
+      case symbol_kind::S_func_header: // func_header
         value.move< FuncDecl > (std::move (that.value));
         break;
 
@@ -826,6 +831,7 @@ namespace  yy  {
         break;
 
       case symbol_kind::S_stmt: // stmt
+      case symbol_kind::S_vardecl_stmt: // vardecl_stmt
       case symbol_kind::S_expr_stmt: // expr_stmt
       case symbol_kind::S_assign_stmt: // assign_stmt
       case symbol_kind::S_while_stmt: // while_stmt
@@ -1102,6 +1108,7 @@ switch (yykind)
         break;
 
       case symbol_kind::S_func_def: // func_def
+      case symbol_kind::S_func_header: // func_header
         value.template destroy< FuncDecl > ();
         break;
 
@@ -1162,6 +1169,7 @@ switch (yykind)
         break;
 
       case symbol_kind::S_stmt: // stmt
+      case symbol_kind::S_vardecl_stmt: // vardecl_stmt
       case symbol_kind::S_expr_stmt: // expr_stmt
       case symbol_kind::S_assign_stmt: // assign_stmt
       case symbol_kind::S_while_stmt: // while_stmt
@@ -2983,8 +2991,8 @@ switch (yykind)
     /// Constants.
     enum
     {
-      yylast_ = 399,     ///< Last index in yytable_.
-      yynnts_ = 31,  ///< Number of nonterminal symbols.
+      yylast_ = 335,     ///< Last index in yytable_.
+      yynnts_ = 33,  ///< Number of nonterminal symbols.
       yyfinal_ = 4 ///< Termination state number.
     };
 
@@ -2995,9 +3003,9 @@ switch (yykind)
   };
 
 
-#line 76 "robot.ypp"
+#line 92 "robot.ypp"
 } //  yy 
-#line 3001 "generated/robot.tab.hpp"
+#line 3009 "generated/robot.tab.hpp"
 
 
 // "%code provides" blocks.
@@ -3006,7 +3014,7 @@ switch (yykind)
     void yyerror(const std::string& msg);
     extern yy::RobotLexer* THE_LEXER;
 
-#line 3010 "generated/robot.tab.hpp"
+#line 3018 "generated/robot.tab.hpp"
 
 
 #endif // !YY_YY_GENERATED_ROBOT_TAB_HPP_INCLUDED

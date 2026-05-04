@@ -1,0 +1,40 @@
+<PROGRAM>
+    <VARDECLARATION>
+        <VAR name="x" CONST="false">
+            <TYPE>INT</TYPE>
+        </VAR>
+    </VARDECLARATION>
+
+    <FUNC name="bar">
+        <ASSIGN>
+            <VALUE>99</VALUE>
+            <TO>x</TO>
+        </ASSIGN>
+    </FUNC>
+
+    <FUNC name="foo">
+        <VARDECLARATION>
+            <VAR name="local_x" CONST="false">
+                <TYPE>INT</TYPE>
+            </VAR>
+        </VARDECLARATION>
+        <ASSIGN>
+            <VALUE>10</VALUE>
+            <TO>local_x</TO>
+        </ASSIGN>
+        <CALL>bar</CALL>
+        <DOWN>
+            <VALUE>local_x</VALUE>
+        </DOWN>
+    </FUNC>
+
+    <FUNC name="main">
+        <ASSIGN>
+            <VALUE>5</VALUE>
+            <TO>x</TO>
+        </ASSIGN>
+        <CALL>foo</CALL>
+
+    </FUNC>
+
+</PROGRAM>

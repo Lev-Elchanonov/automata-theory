@@ -104,7 +104,8 @@ struct StmtNode {
         MOVE,
         CALL,
         GETDRONSCOUNT,
-        EXPR
+        EXPR,
+        VARDECL
     };
     Type type_;
 

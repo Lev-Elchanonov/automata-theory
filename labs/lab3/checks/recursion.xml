@@ -1,0 +1,78 @@
+<PROGRAM>
+    <VARDECLARATION>
+        <VAR name="x">
+            <TYPE>INT</TYPE>
+        </VAR>
+        <VAR name="result">
+            <TYPE>INT</TYPE>
+        </VAR>
+    </VARDECLARATION>
+
+    <FUNC name="factorial">
+        <SWITCH>
+            <CONDITION>
+                <CHECK>
+                    <EQ>
+                        <VALUE>x</VALUE>
+                        <VALUE>0</VALUE>
+                    </EQ>
+                </CHECK>
+                <DO>
+                    <ASSIGN>
+                        <VALUE>1</VALUE>
+                        <TO>result</TO>
+                    </ASSIGN>
+                </DO>
+            </CONDITION>
+            <CONDITION>
+                <CHECK>
+                    <EQ>
+                        <VALUE>1</VALUE>
+                        <VALUE>1</VALUE>
+                    </EQ>
+                </CHECK>
+                <DO>
+                    <ASSIGN>
+                        <VALUE>
+                            <SUB>
+                                <VALUE>x</VALUE>
+                                <VALUE>1</VALUE>
+                            </SUB>
+                        </VALUE>
+                        <TO>x</TO>
+                    </ASSIGN>
+                    <CALL>factorial</CALL>
+                    <ASSIGN>
+                        <VALUE>
+                            <ADD>
+                                <VALUE>x</VALUE>
+                                <VALUE>1</VALUE>
+                            </ADD>
+                        </VALUE>
+                        <TO>x</TO>
+                    </ASSIGN>
+                    <ASSIGN>
+                        <VALUE>
+                            <MUL>
+                                <VALUE>result</VALUE>
+                                <VALUE>x</VALUE>
+                            </MUL>
+                        </VALUE>
+                        <TO>result</TO>
+                    </ASSIGN>
+                </DO>
+            </CONDITION>
+        </SWITCH>
+    </FUNC>
+
+    <FUNC name="main">
+        <ASSIGN>
+            <VALUE>5</VALUE>
+            <TO>x</TO>
+        </ASSIGN>
+        <CALL>factorial</CALL>
+        <DOWN>
+            <VALUE>result</VALUE>
+        </DOWN>
+    </FUNC>
+</PROGRAM>

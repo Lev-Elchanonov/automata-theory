@@ -478,7 +478,13 @@ private:
             break;
 
         case StmtNode::EXPR:
-            eval_expr(stmt->expr_val_);
+            if (stmt->expr_val_ && stmt->expr_val_->var_name_ == "__vardecl__") {
+            } else {
+                eval_expr(stmt->expr_val_);
+            }
+            break;
+
+        case StmtNode::VARDECL:
             break;
         }
     }
@@ -577,6 +583,12 @@ private:
         });
 
         scopes_.push_back({});
+        for (auto& s : it->second.body_) {
+            if (s->type_ == StmtNode::EXPR && s->expr_val_ &&
+                s->expr_val_->var_name_ == "__vardecl__") {
+                // Пропускаем (объявления уже в scopes_.back())
+                }
+        }
 
         execute_stmt_list(it->second.body_);
 
@@ -706,6 +718,7 @@ public:
         if (found != global_symbols.end()) {
             return found->second;
         }
+        throw std::runtime_error("Undefined variable: " + name);
     }
 };
 

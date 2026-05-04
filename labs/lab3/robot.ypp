@@ -34,6 +34,22 @@
     std::map<std::string, SymbolInfo> global_symbols;
     std::map<std::string, FuncDecl> functions;
     bool has_main = false;
+    std::map<std::string, SymbolInfo>* current_scope = &global_symbols;
+    std::vector<std::map<std::string, SymbolInfo>> local_scopes;
+
+    SymbolInfo* find_variable_in_scopes(const std::string& name) {
+            for (auto it = local_scopes.rbegin(); it != local_scopes.rend(); ++it) {
+                auto found = it->find(name);
+                if (found != it->end()) {
+                    return &found->second;
+                }
+            }
+            auto found = global_symbols.find(name);
+            if (found != global_symbols.end()) {
+                return &found->second;
+            }
+            return nullptr;
+        }
 
 
     static int yylex(yy::RobotParser::semantic_type* yylval, yy::location* loc, yy::RobotLexer& lexer) {
@@ -174,7 +190,7 @@
 
 %type <std::vector<expr_ptr>> expr_list opt_expr_list var_ref_list dim_ref_list // (expr_list - список выражений (аргументы для ADD и тд). Может быть опционален или состоять из ссылок)
 
-%type <stmt_ptr> expr_stmt stmt assign_stmt while_stmt switch_stmt move_stmt call_stmt getdrons_stmt // (указатель на узел любой инструкции)
+%type <stmt_ptr> expr_stmt stmt assign_stmt while_stmt switch_stmt move_stmt call_stmt getdrons_stmt vardecl_stmt// (указатель на узел любой инструкции)
 
 %type <std::vector<stmt_ptr>> stmt_list // список инструкций
 
@@ -182,7 +198,7 @@
 
 %type <std::vector<ConditionBranch>> cond_list // список веток условий для switch
 
-%type <FuncDecl> func_def // описание функции
+%type <FuncDecl> func_def func_header // описание функции
 
 
 %%
@@ -211,16 +227,10 @@ program_items:
     | program_items func_def
     {
         if (!$2.name_.empty()){
-            if (functions.find($2.name_) != functions.end()){
-                add_semantic_error(@2.begin.line, @2.begin.column, "SEMANTIC ERROR: function '" + $2.name_ + "' already defined");
+            if ($2.is_main_ || $2.name_ == "main") {
+                has_main = true;
             }
-            else {
-                functions[$2.name_] = $2;
-                if ($2.name_ == "main"){
-                    has_main = true;
-                }
-                std::cout << "Function defined: " << $2.name_ << std::endl;
-            }
+            functions[$2.name_] = $2;
         }
     }
     | program_items error
@@ -234,15 +244,15 @@ program_items:
 vardecl_block:
     TOKEN_VARDECL_OPEN var_list TOKEN_VARDECL_CLOSE
     {
+        auto& target_scope = local_scopes.empty() ? global_symbols : local_scopes.back();
         for (const auto& decl : $2){
-            if (global_symbols.find(decl.name_) != global_symbols.end()){
-               add_semantic_error(@1.begin.line, @1.begin.column, "variable '" + decl.name_ + "' already declared");
-               continue;
+            if (target_scope.find(decl.name_) != target_scope.end()){
+                add_semantic_error(@1.begin.line, @1.begin.column, "variable '" + decl.name_ + "' already declared");
+                continue;
             }
             SymbolInfo info;
             info.decl_ = decl;
-            global_symbols[decl.name_] = info;
-            std::cout << "Variable declared: " << decl.name_ << "(type: " << decl.type_ << ")" << std::endl;
+            target_scope[decl.name_] = info;
         }
     }
 ;
@@ -379,23 +389,35 @@ value_list:
     <CALL>helper</CALL>
 </FUNC>
 */
+
 func_def:
-    TOKEN_FUNC_OPEN TOKEN_NAME_ATTR TOKEN_MAIN '>' stmt_list TOKEN_FUNC_CLOSE
+    func_header stmt_list TOKEN_FUNC_CLOSE
     {
-            if (has_main){
-                add_semantic_error(@3.begin.line, @3.begin.column, "multiple definitions of 'main'");
-            } else{
-                $$.name_ = "main";
-                $$.body_ = $5;
-                $$.is_main_ = true;
-                has_main = true;
-            }
+        $$ = $1;
+        $$.body_ = $2;
+        local_scopes.pop_back();
     }
-    | TOKEN_FUNC_OPEN TOKEN_NAME_ATTR TOKEN_STRING '>' stmt_list TOKEN_FUNC_CLOSE
+;
+
+func_header:
+    TOKEN_FUNC_OPEN TOKEN_NAME_ATTR TOKEN_MAIN '>'
     {
+        local_scopes.push_back({});
+        if (has_main){
+            add_semantic_error(@3.begin.line, @3.begin.column, "multiple definitions of 'main'");
+        } else{
+            $$.name_ = "main";
+            $$.is_main_ = true;
+            has_main = true;
+            functions["main"] = $$;
+        }
+    }
+    | TOKEN_FUNC_OPEN TOKEN_NAME_ATTR TOKEN_STRING '>'
+    {
+        local_scopes.push_back({});
         $$.name_ = $3;
-        $$.body_ = $5;
         $$.is_main_ = false;
+        functions[$3] = $$;
     }
 ;
 
@@ -422,7 +444,28 @@ stmt:
     | call_stmt { $$ = $1; }
     | getdrons_stmt { $$ = $1; }
     | expr_stmt { $$ = $1; }
+    | vardecl_stmt { $$ = $1; }
 ;
+
+
+vardecl_stmt:
+    TOKEN_VARDECL_OPEN var_list TOKEN_VARDECL_CLOSE
+    {
+        auto& target_scope = local_scopes.empty() ? global_symbols : local_scopes.back();
+        for (const auto& decl : $2){
+            if (target_scope.find(decl.name_) != target_scope.end()){
+                add_semantic_error(@1.begin.line, @1.begin.column, "variable '" + decl.name_ + "' already declared");
+                continue;
+            }
+            SymbolInfo info;
+            info.decl_ = decl;
+            target_scope[decl.name_] = info;
+        }
+        auto st = std::make_shared<StmtNode>(StmtNode::VARDECL);
+        $$ = st;
+    }
+;
+
 
 expr_stmt:
     expr
@@ -443,16 +486,16 @@ assign_stmt:
     TOKEN_ASSIGN_OPEN TOKEN_VALUE_OPEN expr TOKEN_VALUE_CLOSE TOKEN_TO_OPEN var_ref_list TOKEN_TO_CLOSE TOKEN_ASSIGN_CLOSE
     {
         for (auto& var : $6){
-            auto it = global_symbols.find(var->var_name_);
-            if (it == global_symbols.end()){
+            auto* sym = find_variable_in_scopes(var->var_name_);
+            if (!sym){
                 add_semantic_error(@6.begin.line, @6.begin.column, "assignment to undeclared variable '" + var->var_name_ + "'");
                 continue;
             }
-            if (it->second.decl_.is_const_){
+            if (sym->decl_.is_const_){
                 add_semantic_error(@6.begin.line, @6.begin.column, "assignment to const variable '" + var->var_name_ + "'");
                 continue;
             }
-            VarDecl::VarType var_type = it->second.decl_.type_;
+            VarDecl::VarType var_type = sym->decl_.type_;
             ExprNode::ValueType expr_type = $3->value_type_;
 
              if (var_type == VarDecl::INT && expr_type != ExprNode::TYPE_INT){
@@ -836,56 +879,61 @@ primary_expr:
 var_ref:
     TOKEN_IDENTIFIER
     {
-        if (global_symbols.find($1) == global_symbols.end()){
+        auto* sym = find_variable_in_scopes($1);
+        if (!sym){
             add_semantic_error(@1.begin.line, @1.begin.column, "variable '" + $1 + "' not declared");
         }
 
         auto iden = ExprNode::make_var_ref($1);
-        auto& decl = global_symbols[$1].decl_;
+        if (sym) {
+                    switch (sym->decl_.type_) {
+                        case VarDecl::INT:
+                            iden->value_type_ = ExprNode::TYPE_INT;
+                            break;
+                        case VarDecl::BOOL:
+                            iden->value_type_ = ExprNode::TYPE_BOOL;
+                            break;
+                        case VarDecl::CELL:
+                            iden->value_type_ = ExprNode::TYPE_CELL;
+                            break;
+                        default: iden->value_type_ = ExprNode::TYPE_UNKNOWN;
+                    }
+                }
 
-        switch (decl.type_) {
-            case VarDecl::INT:
-                iden->value_type_ = ExprNode::TYPE_INT;
-                break;
-            case VarDecl::BOOL:
-                iden->value_type_ = ExprNode::TYPE_BOOL;
-                break;
-            case VarDecl::CELL:
-                iden->value_type_ = ExprNode::TYPE_CELL;
-                break;
-            default: iden->value_type_ = ExprNode::TYPE_UNKNOWN;
-        }
+                $$ = iden;
 
-        $$ = iden;
     }
     | TOKEN_IDENTIFIER dim_ref_list
     {
-        if (global_symbols.find($1) == global_symbols.end()){
+        auto* sym = find_variable_in_scopes($1);
+        if (!sym){
             add_semantic_error(@1.begin.line, @1.begin.column, "variable '" + $1 + "' not declared");
         }
-        auto& decl = global_symbols[$1].decl_;
-        if ($2.size() != decl.dimensions_.size()){
-            add_semantic_error(@1.begin.line, @1.begin.column, "wrong number of indices for '" + $1 + "'");
-        }
-        for (auto& idx : $2) {
-            if (idx->value_type_ != ExprNode::TYPE_INT){
-                add_semantic_error(@1.begin.line, @1.begin.column, "array index must be integer");
+        if (sym) {
+            if ($2.size() != sym->decl_.dimensions_.size()){
+                add_semantic_error(@1.begin.line, @1.begin.column, "wrong number of indices for '" + $1 + "'");
+            }
+            for (auto& idx : $2) {
+                if (idx->value_type_ != ExprNode::TYPE_INT){
+                    add_semantic_error(@1.begin.line, @1.begin.column, "array index must be integer");
+                }
             }
         }
         auto iden = ExprNode::make_var_ref($1);
-        switch (decl.type_) {
-            case VarDecl::INT:
-                iden->value_type_ = ExprNode::TYPE_INT;
-                break;
-            case VarDecl::BOOL:
-                iden->value_type_ = ExprNode::TYPE_BOOL;
-                break;
-            case VarDecl::CELL:
-                iden->value_type_ = ExprNode::TYPE_CELL;
-                break;
-            default: iden->value_type_ = ExprNode::TYPE_UNKNOWN;
+        if (sym) {
+            switch (sym->decl_.type_) {
+                case VarDecl::INT:
+                    iden->value_type_ = ExprNode::TYPE_INT;
+                    break;
+                case VarDecl::BOOL:
+                    iden->value_type_ = ExprNode::TYPE_BOOL;
+                    break;
+                case VarDecl::CELL:
+                    iden->value_type_ = ExprNode::TYPE_CELL;
+                    break;
+                default: iden->value_type_ = ExprNode::TYPE_UNKNOWN;
+            }
         }
-
         for (auto& idx : $2) {
             iden->indices_.push_back(idx);
         }
