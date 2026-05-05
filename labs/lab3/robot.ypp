@@ -432,6 +432,7 @@ stmt_list:
     {
         add_syntax_error(@2.begin.line, @2.begin.column, "Syntax error in statement list");
         yyerrok;
+        yyclearin;
         $$ = $1;
     }
 ;
@@ -462,6 +463,7 @@ vardecl_stmt:
             target_scope[decl.name_] = info;
         }
         auto st = std::make_shared<StmtNode>(StmtNode::VARDECL);
+        st->var_decls_ = $2;
         $$ = st;
     }
 ;

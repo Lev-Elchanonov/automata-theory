@@ -379,6 +379,13 @@
             <TO>undefined_var</TO>
         </ASSIGN>
     </FUNC>
+
+
+    <FUNC name="without_to">
+        <ASSIGN>
+            <VALUE>42</VALUE>
+        </ASSIGN>
+    </FUNC>
 </PROGRAM>
 
 

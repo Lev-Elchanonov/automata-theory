@@ -485,6 +485,11 @@ private:
             break;
 
         case StmtNode::VARDECL:
+            for (const auto& decl : stmt->var_decls_) {
+                SymbolInfo info;
+                info.decl_ = decl;
+                scopes_.back()[decl.name_] = info;
+            }
             break;
         }
     }

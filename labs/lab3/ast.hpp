@@ -109,6 +109,9 @@ struct StmtNode {
     };
     Type type_;
 
+    // сохранить переменные
+    std::vector<VarDecl> var_decls_;
+
     // ASSIGN
     expr_ptr value_;
     std::vector<expr_ptr> targets_;

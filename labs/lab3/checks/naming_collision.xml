@@ -1,0 +1,94 @@
+<PROGRAM>
+    <VARDECLARATION>
+        <VAR name="x" CONST="false">
+            <TYPE>INT</TYPE>
+        </VAR>
+    </VARDECLARATION>
+
+    <FUNC name="func2">
+        <VARDECLARATION>
+            <VAR name="x" CONST="false">
+                <TYPE>INT</TYPE>
+            </VAR>
+        </VARDECLARATION>
+        <ASSIGN>
+            <VALUE>3</VALUE>
+            <TO>x</TO>
+        </ASSIGN>
+        <ASSIGN>
+            <VALUE>
+                <MUL>
+                    <VALUE>x</VALUE>
+                    <VALUE>x</VALUE>
+                </MUL>
+            </VALUE>
+            <TO>x</TO>
+        </ASSIGN>
+        <SWITCH>
+            <CONDITION>
+                <CHECK>
+                    <EQ>
+                        <VALUE>x</VALUE>
+                        <VALUE>9</VALUE>
+                    </EQ>
+                </CHECK>
+                <DO>
+                    <DOWN>
+                        <VALUE>2</VALUE>
+                    </DOWN>
+                </DO>
+            </CONDITION>
+        </SWITCH>
+    </FUNC>
+
+    <FUNC name="func1">
+        <VARDECLARATION>
+            <VAR name="x" CONST="false">
+                <TYPE>INT</TYPE>
+            </VAR>
+        </VARDECLARATION>
+        <ASSIGN>
+            <VALUE>1</VALUE>
+            <TO>x</TO>
+        </ASSIGN>
+        <CALL>func2</CALL>
+        <SWITCH>
+            <CONDITION>
+                <CHECK>
+                    <EQ>
+                        <VALUE>x</VALUE>
+                        <VALUE>1</VALUE>
+                    </EQ>
+                </CHECK>
+                <DO>
+                    <RIGHT>
+                        <VALUE>2</VALUE>
+                    </RIGHT>
+                </DO>
+            </CONDITION>
+        </SWITCH>
+    </FUNC>
+
+    <FUNC name="main">
+        <ASSIGN>
+            <VALUE>0</VALUE>
+            <TO>x</TO>
+        </ASSIGN>
+        <CALL>func1</CALL>
+        <SWITCH>
+            <CONDITION>
+                <CHECK>
+                    <EQ>
+                        <VALUE>x</VALUE>
+                        <VALUE>0</VALUE>
+                    </EQ>
+                </CHECK>
+                <DO>
+                    <UP>
+                        <VALUE>2</VALUE>
+                    </UP>
+                </DO>
+            </CONDITION>
+        </SWITCH>
+    </FUNC>
+</PROGRAM>
