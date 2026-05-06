@@ -217,7 +217,6 @@ func drawRobotScaled(screen *ebiten.Image, x, y int, col color.Color, scale, off
 	)
 	screen.DrawImage(rect, op)
 
-	// Белая рамка
 	borderH := float64(2) * scale
 	if borderH < 1 {
 		borderH = 1
@@ -338,7 +337,7 @@ func readInput() {
 
 		game.commandQueue <- cmd
 
-		// Задержка 500 мс между командами (кроме init)
+
 		if cmd.Command != "init" && cmd.Command != "exit" {
 			time.Sleep(300 * time.Millisecond)
 		}
