@@ -8,7 +8,7 @@
 #include <string>
 #include <iostream>
 #include <sstream>
-#include "robot.tab.hpp"
+#include "generated/robot.tab.hpp"
 
 
 namespace yy {

@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall -g -I. -Igenerated
+CXXFLAGS = -std=c++20 -Wall -g -I. -Igenerated
 FLEX = flex
 BISON = bison
 

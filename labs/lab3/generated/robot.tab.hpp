@@ -53,7 +53,7 @@
     #include <memory>
     #include "ast.hpp"
     namespace yy {
-        class RobotLexer;   // ← ВАЖНО: вернуть эту строку!
+        class RobotLexer;
     }
 
 #line 60 "generated/robot.tab.hpp"
@@ -190,7 +190,7 @@
 # define YYDEBUG 1
 #endif
 
-#line 92 "robot.ypp"
+#line 91 "robot.ypp"
 namespace  yy  {
 #line 196 "generated/robot.tab.hpp"
 
@@ -3003,7 +3003,7 @@ switch (yykind)
   };
 
 
-#line 92 "robot.ypp"
+#line 91 "robot.ypp"
 } //  yy 
 #line 3009 "generated/robot.tab.hpp"
 

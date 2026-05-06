@@ -12,7 +12,7 @@
     #include <memory>
     #include "ast.hpp"
     namespace yy {
-        class RobotLexer;   // ← ВАЖНО: вернуть эту строку!
+        class RobotLexer;
     }
 }
 
@@ -31,21 +31,20 @@
     yy::RobotLexer* THE_LEXER = nullptr;
 
 
-    std::map<std::string, SymbolInfo> global_symbols;
-    std::map<std::string, FuncDecl> functions;
-    bool has_main = false;
-    std::map<std::string, SymbolInfo>* current_scope = &global_symbols;
-    std::vector<std::map<std::string, SymbolInfo>> local_scopes;
+    std::map<std::string, SymbolInfo> global_symbols_;
+    std::map<std::string, FuncDecl> functions_;
+    bool has_main_ = false;
+    std::vector<std::map<std::string, SymbolInfo>> local_scopes_;
 
     SymbolInfo* find_variable_in_scopes(const std::string& name) {
-            for (auto it = local_scopes.rbegin(); it != local_scopes.rend(); ++it) {
+            for (auto it = local_scopes_.rbegin(); it != local_scopes_.rend(); ++it) {
                 auto found = it->find(name);
                 if (found != it->end()) {
                     return &found->second;
                 }
             }
-            auto found = global_symbols.find(name);
-            if (found != global_symbols.end()) {
+            auto found = global_symbols_.find(name);
+            if (found != global_symbols_.end()) {
                 return &found->second;
             }
             return nullptr;
@@ -211,13 +210,13 @@ program:
                 std::cerr << "Parsing failed with " << errors_.size() << " errors" << std::endl;
                 exit(1);
             }
-        if (!has_main){
+        if (!has_main_){
             std::cerr << "SEMANTIC ERROR: function 'main' not found" << std::endl;
             exit(1);
         }
         std::cout << "=== PARSING COMPLETED SUCCESSFULLY ===" << std::endl;
-        std::cout << "Global variables: " << global_symbols.size() << std::endl;
-        std::cout << "Functions: " << functions.size() << std::endl;
+        std::cout << "Global variables: " << global_symbols_.size() << std::endl;
+        std::cout << "Functions: " << functions_.size() << std::endl;
     }
 ;
 
@@ -228,9 +227,9 @@ program_items:
     {
         if (!$2.name_.empty()){
             if ($2.is_main_ || $2.name_ == "main") {
-                has_main = true;
+                has_main_ = true;
             }
-            functions[$2.name_] = $2;
+            functions_[$2.name_] = $2;
         }
     }
     | program_items error
@@ -244,7 +243,7 @@ program_items:
 vardecl_block:
     TOKEN_VARDECL_OPEN var_list TOKEN_VARDECL_CLOSE
     {
-        auto& target_scope = local_scopes.empty() ? global_symbols : local_scopes.back();
+        auto& target_scope = local_scopes_.empty() ? global_symbols_ : local_scopes_.back();
         for (const auto& decl : $2){
             if (target_scope.find(decl.name_) != target_scope.end()){
                 add_semantic_error(@1.begin.line, @1.begin.column, "variable '" + decl.name_ + "' already declared");
@@ -395,29 +394,29 @@ func_def:
     {
         $$ = $1;
         $$.body_ = $2;
-        local_scopes.pop_back();
+        local_scopes_.pop_back();
     }
 ;
 
 func_header:
     TOKEN_FUNC_OPEN TOKEN_NAME_ATTR TOKEN_MAIN '>'
     {
-        local_scopes.push_back({});
-        if (has_main){
+        local_scopes_.push_back({});
+        if (has_main_){
             add_semantic_error(@3.begin.line, @3.begin.column, "multiple definitions of 'main'");
         } else{
             $$.name_ = "main";
             $$.is_main_ = true;
-            has_main = true;
-            functions["main"] = $$;
+            has_main_ = true;
+            functions_["main"] = $$;
         }
     }
     | TOKEN_FUNC_OPEN TOKEN_NAME_ATTR TOKEN_STRING '>'
     {
-        local_scopes.push_back({});
+        local_scopes_.push_back({});
         $$.name_ = $3;
         $$.is_main_ = false;
-        functions[$3] = $$;
+        functions_[$3] = $$;
     }
 ;
 
@@ -452,7 +451,7 @@ stmt:
 vardecl_stmt:
     TOKEN_VARDECL_OPEN var_list TOKEN_VARDECL_CLOSE
     {
-        auto& target_scope = local_scopes.empty() ? global_symbols : local_scopes.back();
+        auto& target_scope = local_scopes_.empty() ? global_symbols_ : local_scopes_.back();
         for (const auto& decl : $2){
             if (target_scope.find(decl.name_) != target_scope.end()){
                 add_semantic_error(@1.begin.line, @1.begin.column, "variable '" + decl.name_ + "' already declared");
@@ -655,7 +654,7 @@ move_stmt:
 call_stmt:
     TOKEN_CALL_OPEN TOKEN_IDENTIFIER TOKEN_CALL_CLOSE
     {
-        if (functions.find($2) == functions.end()){
+        if (functions_.find($2) == functions_.end()){
             add_semantic_error(@2.begin.line, @2.begin.column, "function '" + $2 + "' not defined");
         } else {
             auto st = std::make_shared<StmtNode>(StmtNode::CALL);

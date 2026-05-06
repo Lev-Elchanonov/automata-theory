@@ -4,6 +4,7 @@
 #include "ast.hpp"
 #include <nlohmann/json.hpp>
 #include <map>
+#include <ranges>
 #include <string>
 #include <vector>
 #include <memory>
@@ -16,34 +17,34 @@
 
 using json = nlohmann::json;
 
-extern std::map<std::string, struct SymbolInfo> global_symbols;
-extern std::map<std::string, FuncDecl> functions;
+extern std::map<std::string, SymbolInfo> global_symbols_;
+extern std::map<std::string, FuncDecl> functions_;
 
 
 
 class Interpreter {
 private:
-    FILE* go_stdin = nullptr;
+    FILE* go_stdin_ = nullptr;
 
     std::mt19937 rng;
     std::vector<std::map<std::string, SymbolInfo>> scopes_;
 
-    int robot_x = 0;
-    int robot_y = 0;
-    int drone_count = 100;
-    bool robot_broken = false;
-    bool robot_escaped = false;
+    int robot_x_ = 0;
+    int robot_y_ = 0;
+    int drone_count_ = 0;
+    bool robot_broken_ = false;
+    bool robot_escaped_ = false;
 
-    int FIELD_WIDTH = 10;
-    int FIELD_HEIGHT = 10;
+    int FIELD_WIDTH_ = 0;
+    int FIELD_HEIGHT_ = 0;
 
-    std::vector<std::vector<int>> field;
+    std::vector<std::vector<int>> field_;
 
     void send_to_go(const json& cmd) const {
-        if (go_stdin) {
+        if (go_stdin_) {
             std::string cmd_str = cmd.dump();
-            fprintf(go_stdin, "%s\n", cmd_str.c_str());
-            fflush(go_stdin);
+            fprintf(go_stdin_, "%s\n", cmd_str.c_str());
+            fflush(go_stdin_);
         }
     }
 
@@ -57,7 +58,8 @@ private:
         std::vector<int> array_val_;    // для дронов
         std::vector<int> dims_;
     };
-    Value eval_expr(expr_ptr node) {
+
+    Value eval_expr(const expr_ptr& node) {
         if (!node) {
             throw std::runtime_error("Expression == NULL");
         }
@@ -206,7 +208,7 @@ private:
         }
     }
 
-    Value eval_var_ref(expr_ptr node) {
+    Value eval_var_ref(const expr_ptr& node) {
         SymbolInfo& sym = find_variable(node->var_name_);
 
         if (!sym.initialized_) {
@@ -234,11 +236,11 @@ private:
             return v;
         }
 
-        int flat_index = 0;
+        size_t flat_index = 0;
         int multiplier = 1;
 
-        for (int i = node->indices_.size() - 1; i >= 0; i--) {
-            Value idx = eval_expr(node->indices_[i]);
+        for (size_t i = node->indices_.size() - 1; static_cast<int>(i) >= 0; i--) {
+            const Value idx = eval_expr(node->indices_[i]);
             if (idx.int_val_ < 0 || idx.int_val_ >= sym.decl_.dimensions_[i]) {
                 throw std::runtime_error("Index out of bounds");
             }
@@ -247,7 +249,7 @@ private:
                 multiplier *= sym.decl_.dimensions_[i];
         }
 
-        if (flat_index < 0 || flat_index >= sym.array_value_.size()) {
+        if (flat_index >= sym.array_value_.size()) {
             throw std::runtime_error("Index out of bounds");
         }
 
@@ -274,14 +276,14 @@ private:
         return v;
     }
 
-    Value eval_senddrons(expr_ptr node) {
+    Value eval_senddrons(const expr_ptr& node) {
         int num_drones = eval_expr(node->args_[0]).int_val_;
 
-        if (drone_count <= 0) {
+        if (drone_count_ <= 0) {
             throw std::runtime_error("No drones available");
         }
-        if (num_drones > drone_count) {
-            num_drones = drone_count;
+        if (num_drones > drone_count_) {
+            num_drones = drone_count_;
         }
 
         std::uniform_int_distribution<int> dir_dist(0, 3);  // рандомная дистанция
@@ -290,7 +292,7 @@ private:
         std::vector<json> drone_paths;
 
         for (int i = 0; i < num_drones; i++) {
-            int dr_x = robot_x, dr_y = robot_y;
+            int dr_x = robot_x_, dr_y = robot_y_;
             int steps = step_dist(rng);
 
             std::vector<std::pair<int,int>> path;
@@ -300,17 +302,26 @@ private:
                 int nx = dr_x, ny = dr_y;
 
                 switch (dir) {
-                case 0: nx--; break;
-                case 1: nx++; break;
-                case 2: ny--; break;
-                case 3: ny++; break;
+                    case 0:
+                        nx--;
+                        break;
+                    case 1:
+                        nx++;
+                        break;
+                    case 2:
+                        ny--;
+                        break;
+                    case 3:
+                        ny++;
+                        break;
+                    default:
+                        break;
                 }
 
-                if (nx >= 0 && nx < FIELD_WIDTH &&
-                    ny >= 0 && ny < FIELD_HEIGHT) {
+                if (nx >= 0 && nx < FIELD_WIDTH_ && ny >= 0 && ny < FIELD_HEIGHT_) {
                     dr_x = nx;
                     dr_y = ny;
-                    path.push_back({dr_x, dr_y});
+                    path.emplace_back(dr_x, dr_y);
                 }
             }
 
@@ -322,47 +333,46 @@ private:
             drone_paths.push_back(drone_path);
         }
 
-        drone_count -= num_drones;
+        drone_count_ -= num_drones;
 
         send_to_go({
             {"command", "drones_launched"},
             {"count", num_drones},
-            {"drones_remaining", drone_count},
-            {"start_x", robot_x},
-            {"start_y", robot_y},
+            {"drones_remaining", drone_count_},
+            {"start_x", robot_x_},
+            {"start_y", robot_y_},
             {"paths", drone_paths}
         });
 
 
-        std::vector<int> scan(FIELD_WIDTH * FIELD_HEIGHT, static_cast<int>(CellValue::UNDEF));
+        std::vector<int> scan(FIELD_WIDTH_ * FIELD_HEIGHT_, static_cast<int>(CellValue::UNDEF));
 
         for (auto& drone_path : drone_paths) {
             for (auto& p : drone_path) {
                 int x = p["x"];
                 int y = p["y"];
-                scan[y * FIELD_WIDTH + x] = field[y][x];
+                scan[y * FIELD_WIDTH_ + x] = field_[y][x];
             }
         }
 
         Value result;
         result.type_ = Value::ARRAY;
         result.array_val_ = scan;
-        result.dims_ = {FIELD_HEIGHT, FIELD_WIDTH};
+        result.dims_ = {FIELD_HEIGHT_, FIELD_WIDTH_};
 
         return result;
     }
 
-    Value eval_call_expr(expr_ptr node) {
-        auto it = functions.find(node->var_name_);
-        if (it == functions.end()) {
+    Value eval_call_expr(const expr_ptr& node) {
+        const auto it = functions_.find(node->var_name_);
+        if (it == functions_.end()) {
             throw std::runtime_error("Function not found: " + node->var_name_);
         }
 
-        scopes_.push_back({});
+        scopes_.emplace_back();
 
         execute_stmt_list(it->second.body_);
 
-        // удаляем область
         scopes_.pop_back();
 
         Value v;
@@ -379,62 +389,62 @@ private:
 
 
 
-    void assign_value(expr_ptr target, const Value& value) {
-        SymbolInfo& sym = find_variable(target->var_name_);
+    void assign_value(const expr_ptr& target, const Value& value) {
+        auto& [decl_, array_value_, initialized_] = find_variable(target->var_name_);
 
 
         if (value.type_ == Value::ARRAY && target->indices_.empty()) {
-            int expected_size = 1;
-            for (int d : sym.decl_.dimensions_)
+            size_t expected_size = 1;
+            for (int d : decl_.dimensions_)
                 expected_size *= d;
             if (expected_size != value.array_val_.size()) {
                 throw std::runtime_error("Array size mismatch in assignment");
             }
 
-            sym.array_value_ = value.array_val_;
-            sym.initialized_ = true;
+            array_value_ = value.array_val_;
+            initialized_ = true;
             return;
         }
-        if (sym.decl_.type_ == VarDecl::INT && value.type_ != Value::INT)
+        if (decl_.type_ == VarDecl::INT && value.type_ != Value::INT)
             throw std::runtime_error("Type mismatch INT");
 
-        if (sym.decl_.type_ == VarDecl::BOOL && value.type_ != Value::BOOL)
+        if (decl_.type_ == VarDecl::BOOL && value.type_ != Value::BOOL)
             throw std::runtime_error("Type mismatch BOOL");
 
-        if (sym.decl_.type_ == VarDecl::CELL && value.type_ != Value::CELL)
+        if (decl_.type_ == VarDecl::CELL && value.type_ != Value::CELL)
             throw std::runtime_error("Type mismatch CELL");
 
 
         int int_val = 0;
         if (value.type_ == Value::INT) int_val = value.int_val_;
         else if (value.type_ == Value::BOOL) int_val = value.bool_val_;
-        else if (value.type_ == Value::CELL) int_val = (int)value.cell_val_;
+        else if (value.type_ == Value::CELL) int_val = static_cast<int>(value.cell_val_);
 
         if (target->indices_.empty()) {
-            if (sym.array_value_.empty()) {
-                sym.array_value_.push_back(int_val);
+            if (array_value_.empty()) {
+                array_value_.push_back(int_val);
             } else
-                sym.array_value_[0] = int_val;
+                array_value_[0] = int_val;
         } else {
             int flat_index = 0;
             int multiplier = 1;
 
-            for (int i = target->indices_.size() - 1; i >= 0; i--) {
+            for (auto i = target->indices_.size() - 1; static_cast<int>(i) >= 0; i--) {
                 Value idx = eval_expr(target->indices_[i]);
                 flat_index += idx.int_val_ * multiplier;
                 if (i > 0)
-                    multiplier *= sym.decl_.dimensions_[i];
+                    multiplier *= decl_.dimensions_[i];
             }
 
-            sym.array_value_[flat_index] = int_val;
+            array_value_[flat_index] = int_val;
         }
 
-        sym.initialized_ = true;
+        initialized_ = true;
     }
 
 
-    void execute_stmt(stmt_ptr stmt) {
-        if (!stmt || robot_broken || robot_escaped) return;
+    void execute_stmt(const stmt_ptr& stmt) {
+        if (!stmt || robot_broken_ || robot_escaped_) return;
 
         switch (stmt->type_) {
         case StmtNode::ASSIGN: {
@@ -446,7 +456,7 @@ private:
         }
 
         case StmtNode::WHILE: {
-            while (!robot_broken && !robot_escaped) {
+            while (!robot_broken_ && !robot_escaped_) {
                 Value cond = eval_expr(stmt->while_cond_);
                 if (!cond.bool_val_) break;
                 execute_stmt_list(stmt->while_body_);
@@ -495,90 +505,98 @@ private:
     }
 
     void execute_stmt_list(std::vector<stmt_ptr>& stmts) {
-        for (auto stmt : stmts) {
-            if (robot_broken || robot_escaped) break;
+        for (const auto& stmt : stmts) {
+            if (robot_broken_ || robot_escaped_) break;
             execute_stmt(stmt);
         }
     }
 
-    void execute_move(stmt_ptr stmt) {
+    void execute_move(const stmt_ptr& stmt) {
         int distance = eval_expr(stmt->distance_).int_val_;
         int dx = 0, dy = 0;
         std::string dir_name;
 
         switch (stmt->direction_) {
-            case StmtNode::LEFT:  dx = -1; dir_name = "left"; break;
-            case StmtNode::RIGHT: dx = 1;  dir_name = "right"; break;
-            case StmtNode::UP:    dy = -1; dir_name = "up"; break;
-            case StmtNode::DOWN:  dy = 1;  dir_name = "down"; break;
+            case StmtNode::LEFT:
+                dx = -1;
+                dir_name = "left";
+                break;
+            case StmtNode::RIGHT:
+                dx = 1;
+                dir_name = "right";
+                break;
+            case StmtNode::UP:
+                dy = -1;
+                dir_name = "up";
+                break;
+            case StmtNode::DOWN:
+                dy = 1;
+                dir_name = "down";
+                break;
         }
 
         for (int i = 0; i < distance; i++) {
-            int new_x = robot_x + dx;
-            int new_y = robot_y + dy;
+            int new_x = robot_x_ + dx;
+            int new_y = robot_y_ + dy;
 
-            if (new_x < 0 || new_x >= FIELD_WIDTH ||
-                new_y < 0 || new_y >= FIELD_HEIGHT) {
-
+            if (new_x < 0 || new_x >= FIELD_WIDTH_ || new_y < 0 || new_y >= FIELD_HEIGHT_) {
                 send_to_go({
                     {"command", "robot_status"},
                     {"status", "broken"},
-                    {"x", robot_x},
-                    {"y", robot_y},
+                    {"x", robot_x_},
+                    {"y", robot_y_},
                     {"message", "Hit the boundary wall"}
                 });
 
                 std::cout << "Robot hit the boundary and broke at ("
-                          << robot_x << "," << robot_y << ")!" << std::endl;
-                robot_broken = true;
+                          << robot_x_ << "," << robot_y_ << ")!" << std::endl;
+                robot_broken_ = true;
                 return;
             }
 
-            if (field[new_y][new_x] == 1) {
+            if (field_[new_y][new_x] == 1) {
                 send_to_go({
                     {"command", "robot_status"},
                     {"status", "broken"},
-                    {"x", robot_x},
-                    {"y", robot_y},
+                    {"x", robot_x_},
+                    {"y", robot_y_},
                     {"message", "Hit a wall"}
                 });
 
-                std::cout << "Robot hit a wall and broke at ("
-                          << robot_x << "," << robot_y << ")!" << std::endl;
-                robot_broken = true;
+                std::cout << "Robot hit a wall and broke at (" << robot_x_ << "," << robot_y_ << ")!" << std::endl;
+                robot_broken_ = true;
                 return;
             }
 
-            robot_x = new_x;
-            robot_y = new_y;
+            robot_x_ = new_x;
+            robot_y_ = new_y;
 
             send_to_go({
                 {"command", "robot_move"},
-                {"x", robot_x},
-                {"y", robot_y},
+                {"x", robot_x_},
+                {"y", robot_y_},
                 {"direction", dir_name}
             });
 
-            std::cout << "Robot moved to (" << robot_x << ","
-                      << robot_y << ")" << std::endl;
+            std::cout << "Robot moved to (" << robot_x_ << "," << robot_y_ << ")" << std::endl;
 
-            if (field[robot_y][robot_x] == 2) {
+            if (field_[robot_y_][robot_x_] == 2) {
                 send_to_go({
                     {"command", "robot_status"},
                     {"status", "exit_found"},
-                    {"x", robot_x},
-                    {"y", robot_y},
+                    {"x", robot_x_},
+                    {"y", robot_y_},
                     {"message", "Exit found!"}
                 });
-                robot_escaped = true;
+                robot_escaped_ = true;
                 std::cout << "Robot found the exit! Success!" << std::endl;
                 return;
             }
         }
     }
 
-    void execute_call(stmt_ptr stmt) {
-        auto it = functions.find(stmt->call_name_);
+    void execute_call(const stmt_ptr& stmt) {
+        auto it = functions_.find(stmt->call_name_);
 
         std::cout << "Calling function: " << stmt->call_name_ << std::endl;
 
@@ -587,92 +605,86 @@ private:
             {"name", stmt->call_name_}
         });
 
-        scopes_.push_back({});
-        for (auto& s : it->second.body_) {
-            if (s->type_ == StmtNode::EXPR && s->expr_val_ &&
-                s->expr_val_->var_name_ == "__vardecl__") {
-                // Пропускаем (объявления уже в scopes_.back())
-                }
-        }
+        scopes_.emplace_back();
 
         execute_stmt_list(it->second.body_);
 
         scopes_.pop_back();
     }
 
-    void execute_getdronscount(stmt_ptr stmt) {
+    void execute_getdronscount(const stmt_ptr& stmt) {
         Value v;
         v.type_ = Value::INT;
-        v.int_val_ = drone_count;
+        v.int_val_ = drone_count_;
         assign_value(stmt->dron_target_, v);
 
         send_to_go({
             {"command", "drone_count_queried"},
-            {"count", drone_count}
+            {"count", drone_count_}
         });
     }
 
 public:
-    Interpreter(FILE* go_stdin = nullptr)
-        : go_stdin(go_stdin), rng(std::random_device{}()) {
+    explicit Interpreter(FILE* go_stdin = nullptr)
+        : go_stdin_(go_stdin), rng(std::random_device{}()) {
 
         load_field("map.txt");
 
         json field_json = json::array();
-        for (int y = 0; y < FIELD_HEIGHT; y++) {
+        for (int y = 0; y < FIELD_HEIGHT_; y++) {
             json row = json::array();
-            for (int x = 0; x < FIELD_WIDTH; x++) {
-                row.push_back(field[y][x]);
+            for (int x = 0; x < FIELD_WIDTH_; x++) {
+                row.push_back(field_[y][x]);
             }
             field_json.push_back(row);
         }
 
-        scopes_.push_back({});
+        scopes_.emplace_back();
         send_to_go({
             {"command", "init"},
-            {"width", FIELD_WIDTH},
-            {"height", FIELD_HEIGHT},
+            {"width", FIELD_WIDTH_},
+            {"height", FIELD_HEIGHT_},
             {"field", field_json},
-            {"robot_x", robot_x},
-            {"robot_y", robot_y},
-            {"drone_count", drone_count}
+            {"robot_x", robot_x_},
+            {"robot_y", robot_y_},
+            {"drone_count", drone_count_}
         });
 
-        std::cout << "Interpreter initialized. Field: " << FIELD_WIDTH << "x"
-                  << FIELD_HEIGHT << ", Drones: " << drone_count
+        std::cout << "Interpreter initialized. Field: " << FIELD_WIDTH_ << "x"
+                  << FIELD_HEIGHT_ << ", Drones: " << drone_count_
                   << ", Robot at: (0,0)" << std::endl;
     }
 
     void initialize_variables() {
-        for (auto& [name, sym] : global_symbols) {
-            if (!sym.decl_.init_values_.empty()) {
-                if (sym.decl_.dimensions_.empty()) {
-                    Value v = eval_expr(sym.decl_.init_values_[0]);
-                    sym.array_value_.push_back(v.int_val_);
+        for (auto& [name_, sym_] : global_symbols_) {
+            if (!sym_.decl_.init_values_.empty()) {
+                if (sym_.decl_.dimensions_.empty()) {
+                    Value v = eval_expr(sym_.decl_.init_values_[0]);
+                    sym_.array_value_.push_back(v.int_val_);
                 } else {
-                    for (auto& init_expr : sym.decl_.init_values_) {
+                    for (auto& init_expr : sym_.decl_.init_values_) {
                         Value v = eval_expr(init_expr);
-                        sym.array_value_.push_back(v.int_val_);
+                        sym_.array_value_.push_back(v.int_val_);
                     }
                 }
-                sym.initialized_ = true;
+                sym_.initialized_ = true;
             } else {
-                if (sym.decl_.dimensions_.empty()) {
-                    sym.array_value_.push_back(0);
+                if (sym_.decl_.dimensions_.empty()) {
+                    sym_.array_value_.push_back(0);
                 } else {
                     int total_size = 1;
-                    for (int dim : sym.decl_.dimensions_) {
+                    for (const int dim : sym_.decl_.dimensions_) {
                         total_size *= dim;
                     }
-                    sym.array_value_.resize(total_size, 0);
+                    sym_.array_value_.resize(total_size, 0);
                 }
             }
         }
     }
 
     void run() {
-        auto it = functions.find("main");
-        if (it == functions.end()) {
+        const auto it = functions_.find("main");
+        if (it == functions_.end()) {
             throw std::runtime_error("No 'main' function found");
         }
 
@@ -687,40 +699,41 @@ public:
 
         send_to_go({
             {"command", "finished"},
-            {"robot_broken", robot_broken},
-            {"final_x", robot_x},
-            {"final_y", robot_y},
-            {"drones_remaining", drone_count}
+            {"robot_broken", robot_broken_},
+            {"final_x", robot_x_},
+            {"final_y", robot_y_},
+            {"drones_remaining", drone_count_}
         });
 
-        if (!robot_broken) {
-            std::cout << "Final robot position: (" << robot_x << "," << robot_y << ")" << std::endl;
-            std::cout << "Drones remaining: " << drone_count << std::endl;
+        if (!robot_broken_) {
+            std::cout << "Final robot position: (" << robot_x_ << "," << robot_y_ << ")" << std::endl;
+            std::cout << "Drones remaining: " << drone_count_ << std::endl;
         }
     }
     void load_field(const std::string& filename) {
         std::ifstream file(filename);
-        file >> FIELD_HEIGHT;
-        file >> FIELD_WIDTH;
-        file >> robot_x;
-        file >> robot_y;
-        field.resize(FIELD_HEIGHT, std::vector<int>(FIELD_WIDTH));
-        for (int y = 0; y < FIELD_HEIGHT; y++) {
-            for (int x = 0; x < FIELD_WIDTH; x++) {
-                file >> field[y][x];
+        file >> FIELD_HEIGHT_;
+        file >> FIELD_WIDTH_;
+        file >> robot_x_;
+        file >> robot_y_;
+        file >> drone_count_;
+        field_.resize(FIELD_HEIGHT_, std::vector<int>(FIELD_WIDTH_));
+        for (int y = 0; y < FIELD_HEIGHT_; y++) {
+            for (int x = 0; x < FIELD_WIDTH_; x++) {
+                file >> field_[y][x];
             }
         }
     }
 
     SymbolInfo& find_variable(const std::string& name) {
-        for (auto it = scopes_.rbegin(); it != scopes_.rend(); ++it) {
-            auto found = it->find(name);
-            if (found != it->end()) {
+        for (auto & scope : std::ranges::reverse_view(scopes_)) {
+            auto found = scope.find(name);
+            if (found != scope.end()) {
                 return found->second;
             }
         }
-        auto found = global_symbols.find(name);
-        if (found != global_symbols.end()) {
+        auto found = global_symbols_.find(name);
+        if (found != global_symbols_.end()) {
             return found->second;
         }
         throw std::runtime_error("Undefined variable: " + name);

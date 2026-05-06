@@ -51,19 +51,19 @@ struct ExprNode {
 
     explicit ExprNode(Type t) : type_(t) {}
 
-    static expr_ptr make_int(int val) {
+    static expr_ptr make_int(const int val) {
         auto node = std::make_shared<ExprNode>(INT_LIT);
         node->int_value_ = val;
         node->value_type_ = TYPE_INT;
         return node;
     }
-    static expr_ptr make_bool(bool val) {
+    static expr_ptr make_bool(const bool val) {
         auto node = std::make_shared<ExprNode>(BOOL_LIT);
         node->bool_value_ = val;
         node->value_type_ = TYPE_BOOL;
         return node;
     }
-    static expr_ptr make_cell(CellValue val) {
+    static expr_ptr make_cell(const CellValue val) {
         auto node = std::make_shared<ExprNode>(CELL_LIT);
         node->cell_value_ = val;
         node->value_type_ = TYPE_CELL;
@@ -112,32 +112,32 @@ struct StmtNode {
     // сохранить переменные
     std::vector<VarDecl> var_decls_;
 
-    // ASSIGN
+    // для ASSIGN
     expr_ptr value_;
     std::vector<expr_ptr> targets_;
 
-    // WHILE
+    // для WHILE
     expr_ptr while_cond_;
     std::vector<stmt_ptr> while_body_;
 
-    // SWITCH
+    // для SWITCH
     std::vector<ConditionBranch> switch_cases_;
 
-    // MOVE
+    // для MOVE
     enum Direction { LEFT, RIGHT, UP, DOWN };
     Direction direction_;
     expr_ptr distance_;
 
-    // CALL
+    // для CALL
     std::string call_name_;
 
-    // GETDRONSCOUNT
+    // для GETDRONSCOUNT
     expr_ptr dron_target_;  // переменная куда записывается количество дронов
 
-    // EXPR
+    // для EXPR
     expr_ptr expr_val_;
 
-    explicit StmtNode(Type t) : type_(t) {}
+    explicit StmtNode(const Type t) : type_(t) {}
 };
 
 struct FuncDecl {
