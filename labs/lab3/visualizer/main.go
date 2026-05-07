@@ -300,6 +300,11 @@ func handleCommand(cmd Command) {
 	case "drone_count_queried":
 		game.dronesCount = cmd.Count
 
+    case "x_position_queried":
+        fmt.Printf("--X_position: %d\n", cmd.X)
+    case "y_position_queried":
+        fmt.Printf("--Y_position: %d\n", cmd.Y)
+
 	case "function_call":
 		fmt.Printf("--Calling: %s\n", cmd.Name)
 

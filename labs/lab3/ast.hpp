@@ -104,6 +104,8 @@ struct StmtNode {
         MOVE,
         CALL,
         GETDRONSCOUNT,
+        GETX,
+        GETY,
         EXPR,
         VARDECL
     };
@@ -133,6 +135,10 @@ struct StmtNode {
 
     // для GETDRONSCOUNT
     expr_ptr dron_target_;  // переменная куда записывается количество дронов
+
+    // для вычисления координат робота
+    expr_ptr x_;
+    expr_ptr y_;
 
     // для EXPR
     expr_ptr expr_val_;

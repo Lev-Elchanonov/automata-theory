@@ -196,6 +196,11 @@ CELL                        {return Token::TOKEN_TYPE_CELL;}
 "<EQ>"                        {return Token::TOKEN_EQ_OPEN;}
 "</EQ>"                       {return Token::TOKEN_EQ_CLOSE;}
 
+"<GETX>"                      {return Token::TOKEN_GETX_OPEN;}
+"</GETX>"                     {return Token::TOKEN_GETX_CLOSE;}
+
+"<GETY>"                      {return Token::TOKEN_GETY_OPEN;}
+"</GETY>"                     {return Token::TOKEN_GETY_CLOSE;}
 
 
 true                        {yylval->build<bool>(true); return Token::TOKEN_BOOL_LIT;}

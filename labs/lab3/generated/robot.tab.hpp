@@ -452,6 +452,8 @@ namespace  yy  {
       // move_stmt
       // call_stmt
       // getdrons_stmt
+      // get_x_stmt
+      // get_y_stmt
       char dummy15[sizeof (stmt_ptr)];
     };
 
@@ -585,7 +587,11 @@ namespace  yy  {
     TOKEN_BOOL_LIT = 338,          // TOKEN_BOOL_LIT
     TOKEN_INT_LIT = 339,           // TOKEN_INT_LIT
     TOKEN_IDENTIFIER = 340,        // TOKEN_IDENTIFIER
-    TOKEN_SELFCLOSE = 341          // TOKEN_SELFCLOSE
+    TOKEN_GETX_OPEN = 341,         // TOKEN_GETX_OPEN
+    TOKEN_GETX_CLOSE = 342,        // TOKEN_GETX_CLOSE
+    TOKEN_GETY_OPEN = 343,         // TOKEN_GETY_OPEN
+    TOKEN_GETY_CLOSE = 344,        // TOKEN_GETY_CLOSE
+    TOKEN_SELFCLOSE = 345          // TOKEN_SELFCLOSE
       };
       /// Backward compatibility alias (Bison 3.6).
       typedef token_kind_type yytokentype;
@@ -602,7 +608,7 @@ namespace  yy  {
     {
       enum symbol_kind_type
       {
-        YYNTOKENS = 88, ///< Number of tokens.
+        YYNTOKENS = 92, ///< Number of tokens.
         S_YYEMPTY = -2,
         S_YYEOF = 0,                             // "end of file"
         S_YYerror = 1,                           // error
@@ -690,41 +696,47 @@ namespace  yy  {
         S_TOKEN_BOOL_LIT = 83,                   // TOKEN_BOOL_LIT
         S_TOKEN_INT_LIT = 84,                    // TOKEN_INT_LIT
         S_TOKEN_IDENTIFIER = 85,                 // TOKEN_IDENTIFIER
-        S_TOKEN_SELFCLOSE = 86,                  // TOKEN_SELFCLOSE
-        S_87_ = 87,                              // '>'
-        S_YYACCEPT = 88,                         // $accept
-        S_program = 89,                          // program
-        S_program_items = 90,                    // program_items
-        S_vardecl_block = 91,                    // vardecl_block
-        S_var_list = 92,                         // var_list
-        S_var_item = 93,                         // var_item
-        S_opt_const = 94,                        // opt_const
-        S_type_spec = 95,                        // type_spec
-        S_opt_dimensions = 96,                   // opt_dimensions
-        S_dims_list = 97,                        // dims_list
-        S_opt_init_values = 98,                  // opt_init_values
-        S_value_list = 99,                       // value_list
-        S_func_def = 100,                        // func_def
-        S_func_header = 101,                     // func_header
-        S_stmt_list = 102,                       // stmt_list
-        S_stmt = 103,                            // stmt
-        S_vardecl_stmt = 104,                    // vardecl_stmt
-        S_expr_stmt = 105,                       // expr_stmt
-        S_assign_stmt = 106,                     // assign_stmt
-        S_var_ref_list = 107,                    // var_ref_list
-        S_while_stmt = 108,                      // while_stmt
-        S_switch_stmt = 109,                     // switch_stmt
-        S_cond_list = 110,                       // cond_list
-        S_cond_branch = 111,                     // cond_branch
-        S_move_stmt = 112,                       // move_stmt
-        S_call_stmt = 113,                       // call_stmt
-        S_getdrons_stmt = 114,                   // getdrons_stmt
-        S_expr = 115,                            // expr
-        S_opt_expr_list = 116,                   // opt_expr_list
-        S_expr_list = 117,                       // expr_list
-        S_primary_expr = 118,                    // primary_expr
-        S_var_ref = 119,                         // var_ref
-        S_dim_ref_list = 120                     // dim_ref_list
+        S_TOKEN_GETX_OPEN = 86,                  // TOKEN_GETX_OPEN
+        S_TOKEN_GETX_CLOSE = 87,                 // TOKEN_GETX_CLOSE
+        S_TOKEN_GETY_OPEN = 88,                  // TOKEN_GETY_OPEN
+        S_TOKEN_GETY_CLOSE = 89,                 // TOKEN_GETY_CLOSE
+        S_TOKEN_SELFCLOSE = 90,                  // TOKEN_SELFCLOSE
+        S_91_ = 91,                              // '>'
+        S_YYACCEPT = 92,                         // $accept
+        S_program = 93,                          // program
+        S_program_items = 94,                    // program_items
+        S_vardecl_block = 95,                    // vardecl_block
+        S_var_list = 96,                         // var_list
+        S_var_item = 97,                         // var_item
+        S_opt_const = 98,                        // opt_const
+        S_type_spec = 99,                        // type_spec
+        S_opt_dimensions = 100,                  // opt_dimensions
+        S_dims_list = 101,                       // dims_list
+        S_opt_init_values = 102,                 // opt_init_values
+        S_value_list = 103,                      // value_list
+        S_func_def = 104,                        // func_def
+        S_func_header = 105,                     // func_header
+        S_stmt_list = 106,                       // stmt_list
+        S_stmt = 107,                            // stmt
+        S_vardecl_stmt = 108,                    // vardecl_stmt
+        S_expr_stmt = 109,                       // expr_stmt
+        S_assign_stmt = 110,                     // assign_stmt
+        S_var_ref_list = 111,                    // var_ref_list
+        S_while_stmt = 112,                      // while_stmt
+        S_switch_stmt = 113,                     // switch_stmt
+        S_cond_list = 114,                       // cond_list
+        S_cond_branch = 115,                     // cond_branch
+        S_move_stmt = 116,                       // move_stmt
+        S_call_stmt = 117,                       // call_stmt
+        S_getdrons_stmt = 118,                   // getdrons_stmt
+        S_get_x_stmt = 119,                      // get_x_stmt
+        S_get_y_stmt = 120,                      // get_y_stmt
+        S_expr = 121,                            // expr
+        S_opt_expr_list = 122,                   // opt_expr_list
+        S_expr_list = 123,                       // expr_list
+        S_primary_expr = 124,                    // primary_expr
+        S_var_ref = 125,                         // var_ref
+        S_dim_ref_list = 126                     // dim_ref_list
       };
     };
 
@@ -839,6 +851,8 @@ namespace  yy  {
       case symbol_kind::S_move_stmt: // move_stmt
       case symbol_kind::S_call_stmt: // call_stmt
       case symbol_kind::S_getdrons_stmt: // getdrons_stmt
+      case symbol_kind::S_get_x_stmt: // get_x_stmt
+      case symbol_kind::S_get_y_stmt: // get_y_stmt
         value.move< stmt_ptr > (std::move (that.value));
         break;
 
@@ -1177,6 +1191,8 @@ switch (yykind)
       case symbol_kind::S_move_stmt: // move_stmt
       case symbol_kind::S_call_stmt: // call_stmt
       case symbol_kind::S_getdrons_stmt: // getdrons_stmt
+      case symbol_kind::S_get_x_stmt: // get_x_stmt
+      case symbol_kind::S_get_y_stmt: // get_y_stmt
         value.template destroy< stmt_ptr > ();
         break;
 
@@ -2649,6 +2665,66 @@ switch (yykind)
 #if 201103L <= YY_CPLUSPLUS
       static
       symbol_type
+      make_TOKEN_GETX_OPEN (location_type l)
+      {
+        return symbol_type (token::TOKEN_GETX_OPEN, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_TOKEN_GETX_OPEN (const location_type& l)
+      {
+        return symbol_type (token::TOKEN_GETX_OPEN, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_TOKEN_GETX_CLOSE (location_type l)
+      {
+        return symbol_type (token::TOKEN_GETX_CLOSE, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_TOKEN_GETX_CLOSE (const location_type& l)
+      {
+        return symbol_type (token::TOKEN_GETX_CLOSE, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_TOKEN_GETY_OPEN (location_type l)
+      {
+        return symbol_type (token::TOKEN_GETY_OPEN, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_TOKEN_GETY_OPEN (const location_type& l)
+      {
+        return symbol_type (token::TOKEN_GETY_OPEN, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_TOKEN_GETY_CLOSE (location_type l)
+      {
+        return symbol_type (token::TOKEN_GETY_CLOSE, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_TOKEN_GETY_CLOSE (const location_type& l)
+      {
+        return symbol_type (token::TOKEN_GETY_CLOSE, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
       make_TOKEN_SELFCLOSE (location_type l)
       {
         return symbol_type (token::TOKEN_SELFCLOSE, std::move (l));
@@ -2713,7 +2789,7 @@ switch (yykind)
     /// \param yyvalue   the value to check
     static bool yy_table_value_is_error_ (int yyvalue) YY_NOEXCEPT;
 
-    static const signed char yypact_ninf_;
+    static const short yypact_ninf_;
     static const signed char yytable_ninf_;
 
     /// Convert a scanner token kind \a t to a symbol kind.
@@ -2991,8 +3067,8 @@ switch (yykind)
     /// Constants.
     enum
     {
-      yylast_ = 335,     ///< Last index in yytable_.
-      yynnts_ = 33,  ///< Number of nonterminal symbols.
+      yylast_ = 342,     ///< Last index in yytable_.
+      yynnts_ = 35,  ///< Number of nonterminal symbols.
       yyfinal_ = 4 ///< Termination state number.
     };
 
@@ -3005,7 +3081,7 @@ switch (yykind)
 
 #line 91 "robot.ypp"
 } //  yy 
-#line 3009 "generated/robot.tab.hpp"
+#line 3085 "generated/robot.tab.hpp"
 
 
 // "%code provides" blocks.
@@ -3014,7 +3090,7 @@ switch (yykind)
     void yyerror(const std::string& msg);
     extern yy::RobotLexer* THE_LEXER;
 
-#line 3018 "generated/robot.tab.hpp"
+#line 3094 "generated/robot.tab.hpp"
 
 
 #endif // !YY_YY_GENERATED_ROBOT_TAB_HPP_INCLUDED

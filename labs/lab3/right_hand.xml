@@ -1855,14 +1855,8 @@
             <VALUE>10</VALUE>
             <TO>send_drones</TO>
         </ASSIGN>
-        <ASSIGN>
-            <VALUE>0</VALUE>
-            <TO>x</TO>
-        </ASSIGN>
-        <ASSIGN>
-            <VALUE>0</VALUE>
-            <TO>y</TO>
-        </ASSIGN>
+        <GETX>x</GETX>
+        <GETY>y</GETY>
         <ASSIGN>
             <VALUE>0</VALUE>
             <TO>direction</TO>

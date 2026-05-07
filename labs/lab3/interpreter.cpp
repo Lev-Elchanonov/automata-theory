@@ -509,6 +509,14 @@ private:
                 scopes_.back()[decl.name_] = info;
             }
             break;
+
+        case StmtNode::GETX:
+            execute_getx(stmt);
+            break;
+
+        case StmtNode::GETY:
+            execute_gety(stmt);
+            break;
         }
     }
 
@@ -632,6 +640,27 @@ private:
         });
     }
 
+    void execute_getx(const stmt_ptr& stmt) {
+        Value v;
+        v.type_ = Value::INT;
+        v.int_val_ = robot_x_;
+        assign_value(stmt->x_, v);
+        send_to_go({
+            {"command", "x_position_queried"},
+            {"x", robot_x_}
+        });
+    }
+    void execute_gety(const stmt_ptr& stmt) {
+        Value v;
+        v.type_ = Value::INT;
+        v.int_val_ = robot_y_;
+        assign_value(stmt->y_, v);
+        send_to_go({
+            {"command", "y_position_queried"},
+            {"y", robot_y_}
+        });
+    }
+
 public:
     explicit Interpreter(FILE* go_stdin = nullptr)
         : go_stdin_(go_stdin), rng(std::random_device{}()) {
@@ -659,8 +688,8 @@ public:
         });
 
         std::cout << "Interpreter initialized. Field: " << FIELD_WIDTH_ << "x"
-                  << FIELD_HEIGHT_ << ", Drones: " << drone_count_
-                  << ", Robot at: (0,0)" << std::endl;
+          << FIELD_HEIGHT_ << ", Drones: " << drone_count_
+          << ", Robot at: (" << robot_x_ << "," << robot_y_ << ")" << std::endl;
     }
 
     void initialize_variables() {
