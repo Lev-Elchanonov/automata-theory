@@ -13,12 +13,16 @@ int main(int argc, char* argv[]) {
     }
 
     std::string input_file = argv[1];
+    std::string map_file = "map.txt";
     std::string go_visualizer;
     FILE* go_pipe = nullptr;
 
     for (int i = 2; i < argc; i++) {
         std::string arg = argv[i];
-        if (arg == "--vis" && i + 1 < argc) {
+        if (arg == "--map" && i + 1 < argc) {
+            map_file = argv[i + 1];  // ← сохраняем путь к карте
+            i++;
+        } else if (arg == "--vis" && i + 1 < argc) {
             go_visualizer = argv[i + 1];
             i++;
         }
@@ -40,7 +44,7 @@ int main(int argc, char* argv[]) {
         std::cout << "Parsing successful!" << std::endl;
 
         try {
-            Interpreter interpreter(go_pipe);
+            Interpreter interpreter(go_pipe, map_file);
             interpreter.initialize_variables();
             interpreter.run();
         } catch (const std::exception& e) {

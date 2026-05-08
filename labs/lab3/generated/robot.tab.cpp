@@ -1479,7 +1479,7 @@ namespace  yy  {
     {
         yylhs.value.as < FuncDecl > () = yystack_[2].value.as < FuncDecl > ();
         yylhs.value.as < FuncDecl > ().body_ = yystack_[1].value.as < std::vector<stmt_ptr> > ();
-        local_scopes_.pop_back();
+        local_scopes_.pop_back(); // удаляем локальную область видимости при выходе из функции
     }
 #line 1485 "generated/robot.tab.cpp"
     break;
@@ -1487,7 +1487,7 @@ namespace  yy  {
   case 25: // func_header: TOKEN_FUNC_OPEN TOKEN_NAME_ATTR TOKEN_MAIN '>'
 #line 406 "robot.ypp"
     {
-        local_scopes_.push_back({});
+        local_scopes_.push_back({}); // создается локальаня обдасть видимости при взходе в функцию
         if (has_main_){
             add_semantic_error(yystack_[1].location.begin.line, yystack_[1].location.begin.column, "multiple definitions of 'main'");
         } else{
@@ -1512,93 +1512,95 @@ namespace  yy  {
     break;
 
   case 27: // stmt_list: %empty
-#line 427 "robot.ypp"
-           { yylhs.value.as < std::vector<stmt_ptr> > () = std::vector<stmt_ptr>(); }
-#line 1518 "generated/robot.tab.cpp"
+#line 428 "robot.ypp"
+    {
+        yylhs.value.as < std::vector<stmt_ptr> > () = std::vector<stmt_ptr>();
+    }
+#line 1520 "generated/robot.tab.cpp"
     break;
 
   case 28: // stmt_list: stmt_list stmt
-#line 429 "robot.ypp"
+#line 432 "robot.ypp"
     {
         yystack_[1].value.as < std::vector<stmt_ptr> > ().push_back(yystack_[0].value.as < stmt_ptr > ());
         yylhs.value.as < std::vector<stmt_ptr> > () = yystack_[1].value.as < std::vector<stmt_ptr> > ();
     }
-#line 1527 "generated/robot.tab.cpp"
+#line 1529 "generated/robot.tab.cpp"
     break;
 
   case 29: // stmt_list: stmt_list error
-#line 434 "robot.ypp"
+#line 437 "robot.ypp"
     {
         add_syntax_error(yystack_[0].location.begin.line, yystack_[0].location.begin.column, "Syntax error in statement list");
         yyerrok;
         yyclearin;
         yylhs.value.as < std::vector<stmt_ptr> > () = yystack_[1].value.as < std::vector<stmt_ptr> > ();
     }
-#line 1538 "generated/robot.tab.cpp"
+#line 1540 "generated/robot.tab.cpp"
     break;
 
   case 30: // stmt: assign_stmt
-#line 443 "robot.ypp"
+#line 446 "robot.ypp"
                 { yylhs.value.as < stmt_ptr > () = yystack_[0].value.as < stmt_ptr > (); }
-#line 1544 "generated/robot.tab.cpp"
+#line 1546 "generated/robot.tab.cpp"
     break;
 
   case 31: // stmt: while_stmt
-#line 444 "robot.ypp"
+#line 447 "robot.ypp"
                  { yylhs.value.as < stmt_ptr > () = yystack_[0].value.as < stmt_ptr > (); }
-#line 1550 "generated/robot.tab.cpp"
+#line 1552 "generated/robot.tab.cpp"
     break;
 
   case 32: // stmt: switch_stmt
-#line 445 "robot.ypp"
+#line 448 "robot.ypp"
                   { yylhs.value.as < stmt_ptr > () = yystack_[0].value.as < stmt_ptr > (); }
-#line 1556 "generated/robot.tab.cpp"
+#line 1558 "generated/robot.tab.cpp"
     break;
 
   case 33: // stmt: move_stmt
-#line 446 "robot.ypp"
+#line 449 "robot.ypp"
                 { yylhs.value.as < stmt_ptr > () = yystack_[0].value.as < stmt_ptr > (); }
-#line 1562 "generated/robot.tab.cpp"
+#line 1564 "generated/robot.tab.cpp"
     break;
 
   case 34: // stmt: call_stmt
-#line 447 "robot.ypp"
+#line 450 "robot.ypp"
                 { yylhs.value.as < stmt_ptr > () = yystack_[0].value.as < stmt_ptr > (); }
-#line 1568 "generated/robot.tab.cpp"
+#line 1570 "generated/robot.tab.cpp"
     break;
 
   case 35: // stmt: getdrons_stmt
-#line 448 "robot.ypp"
+#line 451 "robot.ypp"
                     { yylhs.value.as < stmt_ptr > () = yystack_[0].value.as < stmt_ptr > (); }
-#line 1574 "generated/robot.tab.cpp"
+#line 1576 "generated/robot.tab.cpp"
     break;
 
   case 36: // stmt: expr_stmt
-#line 449 "robot.ypp"
+#line 452 "robot.ypp"
                 { yylhs.value.as < stmt_ptr > () = yystack_[0].value.as < stmt_ptr > (); }
-#line 1580 "generated/robot.tab.cpp"
+#line 1582 "generated/robot.tab.cpp"
     break;
 
   case 37: // stmt: vardecl_stmt
-#line 450 "robot.ypp"
+#line 453 "robot.ypp"
                    { yylhs.value.as < stmt_ptr > () = yystack_[0].value.as < stmt_ptr > (); }
-#line 1586 "generated/robot.tab.cpp"
+#line 1588 "generated/robot.tab.cpp"
     break;
 
   case 38: // stmt: get_x_stmt
-#line 451 "robot.ypp"
+#line 454 "robot.ypp"
                  { yylhs.value.as < stmt_ptr > () = yystack_[0].value.as < stmt_ptr > (); }
-#line 1592 "generated/robot.tab.cpp"
+#line 1594 "generated/robot.tab.cpp"
     break;
 
   case 39: // stmt: get_y_stmt
-#line 452 "robot.ypp"
+#line 455 "robot.ypp"
                  { yylhs.value.as < stmt_ptr > () = yystack_[0].value.as < stmt_ptr > (); }
-#line 1598 "generated/robot.tab.cpp"
+#line 1600 "generated/robot.tab.cpp"
     break;
 
   case 40: // vardecl_stmt: TOKEN_VARDECL_OPEN var_list TOKEN_VARDECL_CLOSE
-#line 458 "robot.ypp"
+#line 461 "robot.ypp"
     {
         auto& target_scope = local_scopes_.empty() ? global_symbols_ : local_scopes_.back();
         for (const auto& decl : yystack_[1].value.as < std::vector<VarDecl> > ()){
@@ -1614,21 +1616,21 @@ namespace  yy  {
         st->var_decls_ = yystack_[1].value.as < std::vector<VarDecl> > ();
         yylhs.value.as < stmt_ptr > () = st;
     }
-#line 1618 "generated/robot.tab.cpp"
+#line 1620 "generated/robot.tab.cpp"
     break;
 
   case 41: // expr_stmt: expr
-#line 478 "robot.ypp"
+#line 481 "robot.ypp"
     {
         auto statement = std::make_shared<StmtNode>(StmtNode::EXPR);
         statement->expr_val_ = yystack_[0].value.as < expr_ptr > ();
         yylhs.value.as < stmt_ptr > () = statement;
     }
-#line 1628 "generated/robot.tab.cpp"
+#line 1630 "generated/robot.tab.cpp"
     break;
 
   case 42: // assign_stmt: TOKEN_ASSIGN_OPEN TOKEN_VALUE_OPEN expr TOKEN_VALUE_CLOSE TOKEN_TO_OPEN var_ref_list TOKEN_TO_CLOSE TOKEN_ASSIGN_CLOSE
-#line 493 "robot.ypp"
+#line 496 "robot.ypp"
     {
         for (auto& var : yystack_[2].value.as < std::vector<expr_ptr> > ()){
             auto* sym = find_variable_in_scopes(var->var_name_);
@@ -1643,15 +1645,15 @@ namespace  yy  {
             VarDecl::VarType var_type = sym->decl_.type_;
             ExprNode::ValueType expr_type = yystack_[5].value.as < expr_ptr > ()->value_type_;
 
-             if (var_type == VarDecl::INT && expr_type != ExprNode::TYPE_INT){
+            if (var_type == VarDecl::INT && expr_type != ExprNode::TYPE_INT){
                 add_semantic_error(yystack_[2].location.begin.line, yystack_[2].location.begin.column, "type mismatch: cannot assign non-INT to INT variable '" + var->var_name_ + "'");
-             }
-             else if (var_type == VarDecl::BOOL && expr_type != ExprNode::TYPE_BOOL){
-                add_semantic_error(yystack_[2].location.begin.line, yystack_[2].location.begin.column, "type mismatch: cannot assign non-BOOL to BOOL variable '" + var->var_name_ + "'");
-             }
-             else if (var_type == VarDecl::CELL && expr_type != ExprNode::TYPE_CELL){
-                add_semantic_error(yystack_[2].location.begin.line, yystack_[2].location.begin.column, "type mismatch: cannot assign non-CELL to CELL variable '" + var->var_name_ + "'");
-             }
+            }
+            else if (var_type == VarDecl::BOOL && expr_type != ExprNode::TYPE_BOOL){
+               add_semantic_error(yystack_[2].location.begin.line, yystack_[2].location.begin.column, "type mismatch: cannot assign non-BOOL to BOOL variable '" + var->var_name_ + "'");
+            }
+            else if (var_type == VarDecl::CELL && expr_type != ExprNode::TYPE_CELL){
+               add_semantic_error(yystack_[2].location.begin.line, yystack_[2].location.begin.column, "type mismatch: cannot assign non-CELL to CELL variable '" + var->var_name_ + "'");
+            }
         }
 
         auto st = std::make_shared<StmtNode>(StmtNode::ASSIGN);
@@ -1659,28 +1661,28 @@ namespace  yy  {
         st->targets_ = yystack_[2].value.as < std::vector<expr_ptr> > ();
         yylhs.value.as < stmt_ptr > () = st;
     }
-#line 1663 "generated/robot.tab.cpp"
+#line 1665 "generated/robot.tab.cpp"
     break;
 
   case 43: // var_ref_list: var_ref
-#line 527 "robot.ypp"
+#line 530 "robot.ypp"
     {
         yylhs.value.as < std::vector<expr_ptr> > ().push_back(yystack_[0].value.as < expr_ptr > ());
     }
-#line 1671 "generated/robot.tab.cpp"
+#line 1673 "generated/robot.tab.cpp"
     break;
 
   case 44: // var_ref_list: var_ref_list var_ref
-#line 531 "robot.ypp"
+#line 534 "robot.ypp"
     {
         yystack_[1].value.as < std::vector<expr_ptr> > ().push_back(yystack_[0].value.as < expr_ptr > ());
         yylhs.value.as < std::vector<expr_ptr> > () = yystack_[1].value.as < std::vector<expr_ptr> > ();
     }
-#line 1680 "generated/robot.tab.cpp"
+#line 1682 "generated/robot.tab.cpp"
     break;
 
   case 45: // while_stmt: TOKEN_WHILE_OPEN TOKEN_CHECK_OPEN expr TOKEN_CHECK_CLOSE TOKEN_DO_OPEN stmt_list TOKEN_DO_CLOSE TOKEN_WHILE_CLOSE
-#line 549 "robot.ypp"
+#line 552 "robot.ypp"
     {
         if (yystack_[5].value.as < expr_ptr > ()->value_type_ != ExprNode::TYPE_BOOL){
             add_semantic_error(yystack_[5].location.begin.line, yystack_[5].location.begin.column, "while condition must be boolean");
@@ -1691,38 +1693,38 @@ namespace  yy  {
             yylhs.value.as < stmt_ptr > () = st;
         }
     }
-#line 1695 "generated/robot.tab.cpp"
+#line 1697 "generated/robot.tab.cpp"
     break;
 
   case 46: // switch_stmt: TOKEN_SWITCH_OPEN cond_list TOKEN_SWITCH_CLOSE
-#line 584 "robot.ypp"
+#line 587 "robot.ypp"
     {
         auto st = std::make_shared<StmtNode>(StmtNode::SWITCH);
         st->switch_cases_ = yystack_[1].value.as < std::vector<ConditionBranch> > ();
         yylhs.value.as < stmt_ptr > () = st;
     }
-#line 1705 "generated/robot.tab.cpp"
+#line 1707 "generated/robot.tab.cpp"
     break;
 
   case 47: // cond_list: cond_branch
-#line 593 "robot.ypp"
+#line 596 "robot.ypp"
     {
         yylhs.value.as < std::vector<ConditionBranch> > ().push_back(yystack_[0].value.as < ConditionBranch > ());
     }
-#line 1713 "generated/robot.tab.cpp"
+#line 1715 "generated/robot.tab.cpp"
     break;
 
   case 48: // cond_list: cond_list cond_branch
-#line 597 "robot.ypp"
+#line 600 "robot.ypp"
     {
         yystack_[1].value.as < std::vector<ConditionBranch> > ().push_back(yystack_[0].value.as < ConditionBranch > ());
         yylhs.value.as < std::vector<ConditionBranch> > () = yystack_[1].value.as < std::vector<ConditionBranch> > ();
     }
-#line 1722 "generated/robot.tab.cpp"
+#line 1724 "generated/robot.tab.cpp"
     break;
 
   case 49: // cond_branch: TOKEN_CONDITION_OPEN TOKEN_CHECK_OPEN expr TOKEN_CHECK_CLOSE TOKEN_DO_OPEN stmt_list TOKEN_DO_CLOSE TOKEN_CONDITION_CLOSE
-#line 605 "robot.ypp"
+#line 608 "robot.ypp"
     {
         if (yystack_[5].value.as < expr_ptr > ()->value_type_ != ExprNode::TYPE_BOOL){
             add_semantic_error(yystack_[5].location.begin.line, yystack_[5].location.begin.column, "condition must be boolean");
@@ -1731,55 +1733,55 @@ namespace  yy  {
             yylhs.value.as < ConditionBranch > ().body_ = yystack_[2].value.as < std::vector<stmt_ptr> > ();
         }
     }
-#line 1735 "generated/robot.tab.cpp"
+#line 1737 "generated/robot.tab.cpp"
     break;
 
   case 50: // move_stmt: TOKEN_LEFT_OPEN expr TOKEN_LEFT_CLOSE
-#line 627 "robot.ypp"
+#line 630 "robot.ypp"
     {
         auto st = std::make_shared<StmtNode>(StmtNode::MOVE);
         st->direction_ = StmtNode::LEFT;
         st->distance_ = yystack_[1].value.as < expr_ptr > ();
         yylhs.value.as < stmt_ptr > () = st;
     }
-#line 1746 "generated/robot.tab.cpp"
+#line 1748 "generated/robot.tab.cpp"
     break;
 
   case 51: // move_stmt: TOKEN_RIGHT_OPEN expr TOKEN_RIGHT_CLOSE
-#line 634 "robot.ypp"
+#line 637 "robot.ypp"
     {
         auto st = std::make_shared<StmtNode>(StmtNode::MOVE);
         st->direction_ = StmtNode::RIGHT;
         st->distance_ = yystack_[1].value.as < expr_ptr > ();
         yylhs.value.as < stmt_ptr > () = st;
     }
-#line 1757 "generated/robot.tab.cpp"
+#line 1759 "generated/robot.tab.cpp"
     break;
 
   case 52: // move_stmt: TOKEN_UP_OPEN expr TOKEN_UP_CLOSE
-#line 641 "robot.ypp"
+#line 644 "robot.ypp"
     {
         auto st = std::make_shared<StmtNode>(StmtNode::MOVE);
         st->direction_ = StmtNode::UP;
         st->distance_ = yystack_[1].value.as < expr_ptr > ();
         yylhs.value.as < stmt_ptr > () = st;
     }
-#line 1768 "generated/robot.tab.cpp"
+#line 1770 "generated/robot.tab.cpp"
     break;
 
   case 53: // move_stmt: TOKEN_DOWN_OPEN expr TOKEN_DOWN_CLOSE
-#line 648 "robot.ypp"
+#line 651 "robot.ypp"
     {
         auto st = std::make_shared<StmtNode>(StmtNode::MOVE);
         st->direction_ = StmtNode::DOWN;
         st->distance_ = yystack_[1].value.as < expr_ptr > ();
         yylhs.value.as < stmt_ptr > () = st;
     }
-#line 1779 "generated/robot.tab.cpp"
+#line 1781 "generated/robot.tab.cpp"
     break;
 
   case 54: // call_stmt: TOKEN_CALL_OPEN TOKEN_IDENTIFIER TOKEN_CALL_CLOSE
-#line 661 "robot.ypp"
+#line 664 "robot.ypp"
     {
         if (functions_.find(yystack_[1].value.as < std::string > ()) == functions_.end()){
             add_semantic_error(yystack_[1].location.begin.line, yystack_[1].location.begin.column, "function '" + yystack_[1].value.as < std::string > () + "' not defined");
@@ -1789,57 +1791,57 @@ namespace  yy  {
             yylhs.value.as < stmt_ptr > () = st;
         }
     }
-#line 1793 "generated/robot.tab.cpp"
+#line 1795 "generated/robot.tab.cpp"
     break;
 
   case 55: // getdrons_stmt: TOKEN_GETDRONSCOUNT_OPEN var_ref TOKEN_GETDRONSCOUNT_CLOSE
-#line 677 "robot.ypp"
+#line 680 "robot.ypp"
     {
         auto st = std::make_shared<StmtNode>(StmtNode::GETDRONSCOUNT);
         st->dron_target_ = yystack_[1].value.as < expr_ptr > ();
         yylhs.value.as < stmt_ptr > () = st;
     }
-#line 1803 "generated/robot.tab.cpp"
+#line 1805 "generated/robot.tab.cpp"
     break;
 
   case 56: // get_x_stmt: TOKEN_GETX_OPEN var_ref TOKEN_GETX_CLOSE
-#line 686 "robot.ypp"
+#line 688 "robot.ypp"
     {
         auto st = std::make_shared<StmtNode>(StmtNode::GETX);
         st->x_ = yystack_[1].value.as < expr_ptr > ();
         yylhs.value.as < stmt_ptr > () = st;
     }
-#line 1813 "generated/robot.tab.cpp"
+#line 1815 "generated/robot.tab.cpp"
     break;
 
   case 57: // get_y_stmt: TOKEN_GETY_OPEN var_ref TOKEN_GETY_CLOSE
-#line 695 "robot.ypp"
+#line 697 "robot.ypp"
     {
         auto st = std::make_shared<StmtNode>(StmtNode::GETY);
         st->y_ = yystack_[1].value.as < expr_ptr > ();
         yylhs.value.as < stmt_ptr > () = st;
     }
-#line 1823 "generated/robot.tab.cpp"
+#line 1825 "generated/robot.tab.cpp"
     break;
 
   case 58: // expr: primary_expr
-#line 709 "robot.ypp"
+#line 712 "robot.ypp"
     {
         yylhs.value.as < expr_ptr > () = yystack_[0].value.as < expr_ptr > ();
     }
-#line 1831 "generated/robot.tab.cpp"
+#line 1833 "generated/robot.tab.cpp"
     break;
 
   case 59: // expr: TOKEN_VALUE_OPEN expr TOKEN_VALUE_CLOSE
-#line 713 "robot.ypp"
+#line 716 "robot.ypp"
     {
         yylhs.value.as < expr_ptr > () = yystack_[1].value.as < expr_ptr > ();
     }
-#line 1839 "generated/robot.tab.cpp"
+#line 1841 "generated/robot.tab.cpp"
     break;
 
   case 60: // expr: TOKEN_ADD_OPEN opt_expr_list TOKEN_ADD_CLOSE
-#line 717 "robot.ypp"
+#line 720 "robot.ypp"
     {
         for (auto& arg : yystack_[1].value.as < std::vector<expr_ptr> > ()){
             if (arg->value_type_ != ExprNode::TYPE_INT){
@@ -1852,11 +1854,11 @@ namespace  yy  {
         ad->value_type_ = ExprNode::TYPE_INT;
         yylhs.value.as < expr_ptr > () = ad;
     }
-#line 1856 "generated/robot.tab.cpp"
+#line 1858 "generated/robot.tab.cpp"
     break;
 
   case 61: // expr: TOKEN_MUL_OPEN opt_expr_list TOKEN_MUL_CLOSE
-#line 730 "robot.ypp"
+#line 733 "robot.ypp"
     {
         for (auto& arg : yystack_[1].value.as < std::vector<expr_ptr> > ()){
             if (arg->value_type_ != ExprNode::TYPE_INT){
@@ -1869,11 +1871,11 @@ namespace  yy  {
         mu->value_type_ = ExprNode::TYPE_INT;
         yylhs.value.as < expr_ptr > () = mu;
     }
-#line 1873 "generated/robot.tab.cpp"
+#line 1875 "generated/robot.tab.cpp"
     break;
 
   case 62: // expr: TOKEN_SUB_OPEN expr expr TOKEN_SUB_CLOSE
-#line 743 "robot.ypp"
+#line 746 "robot.ypp"
     {
         if (yystack_[2].value.as < expr_ptr > ()->value_type_ != ExprNode::TYPE_INT || yystack_[1].value.as < expr_ptr > ()->value_type_ != ExprNode::TYPE_INT){
             add_semantic_error(yystack_[3].location.begin.line, yystack_[3].location.begin.column, "SUB expects integers");
@@ -1885,11 +1887,11 @@ namespace  yy  {
         su->value_type_ = ExprNode::TYPE_INT;
         yylhs.value.as < expr_ptr > () = su;
     }
-#line 1889 "generated/robot.tab.cpp"
+#line 1891 "generated/robot.tab.cpp"
     break;
 
   case 63: // expr: TOKEN_DIV_OPEN expr expr TOKEN_DIV_CLOSE
-#line 755 "robot.ypp"
+#line 758 "robot.ypp"
     {
         if (yystack_[2].value.as < expr_ptr > ()->value_type_ != ExprNode::TYPE_INT || yystack_[1].value.as < expr_ptr > ()->value_type_ != ExprNode::TYPE_INT){
             add_semantic_error(yystack_[3].location.begin.line, yystack_[3].location.begin.column, "DIV expects integers");
@@ -1903,11 +1905,11 @@ namespace  yy  {
         di->value_type_ = ExprNode::TYPE_INT;
         yylhs.value.as < expr_ptr > () = di;
     }
-#line 1907 "generated/robot.tab.cpp"
+#line 1909 "generated/robot.tab.cpp"
     break;
 
   case 64: // expr: TOKEN_AND_OPEN opt_expr_list TOKEN_AND_CLOSE
-#line 769 "robot.ypp"
+#line 772 "robot.ypp"
     {
         for (auto& arg : yystack_[1].value.as < std::vector<expr_ptr> > ()){
             if (arg->value_type_ != ExprNode::TYPE_BOOL){
@@ -1920,11 +1922,11 @@ namespace  yy  {
         a->value_type_ = ExprNode::TYPE_BOOL;
         yylhs.value.as < expr_ptr > () = a;
     }
-#line 1924 "generated/robot.tab.cpp"
+#line 1926 "generated/robot.tab.cpp"
     break;
 
   case 65: // expr: TOKEN_OR_OPEN opt_expr_list TOKEN_OR_CLOSE
-#line 782 "robot.ypp"
+#line 785 "robot.ypp"
     {
         for (auto& arg : yystack_[1].value.as < std::vector<expr_ptr> > ()){
             if (arg->value_type_ != ExprNode::TYPE_BOOL){
@@ -1937,11 +1939,11 @@ namespace  yy  {
         o->value_type_ = ExprNode::TYPE_BOOL;
         yylhs.value.as < expr_ptr > () = o;
     }
-#line 1941 "generated/robot.tab.cpp"
+#line 1943 "generated/robot.tab.cpp"
     break;
 
   case 66: // expr: TOKEN_NOT_OPEN expr TOKEN_NOT_CLOSE
-#line 795 "robot.ypp"
+#line 798 "robot.ypp"
     {
         if (yystack_[1].value.as < expr_ptr > ()->value_type_ != ExprNode::TYPE_BOOL){
             add_semantic_error(yystack_[2].location.begin.line, yystack_[2].location.begin.column, "NOT expects boolean");
@@ -1952,11 +1954,11 @@ namespace  yy  {
         n->value_type_ = ExprNode::TYPE_BOOL;
         yylhs.value.as < expr_ptr > () = n;
     }
-#line 1956 "generated/robot.tab.cpp"
+#line 1958 "generated/robot.tab.cpp"
     break;
 
   case 67: // expr: TOKEN_EQ_OPEN opt_expr_list TOKEN_EQ_CLOSE
-#line 806 "robot.ypp"
+#line 809 "robot.ypp"
     {
         for (size_t i = 1; i < yystack_[1].value.as < std::vector<expr_ptr> > ().size(); i++){
             if (yystack_[1].value.as < std::vector<expr_ptr> > ()[i]->value_type_ != yystack_[1].value.as < std::vector<expr_ptr> > ()[0]->value_type_){
@@ -1969,11 +1971,11 @@ namespace  yy  {
         eq->value_type_ = ExprNode::TYPE_BOOL;
         yylhs.value.as < expr_ptr > () = eq;
     }
-#line 1973 "generated/robot.tab.cpp"
+#line 1975 "generated/robot.tab.cpp"
     break;
 
   case 68: // expr: TOKEN_MAX_OPEN opt_expr_list TOKEN_MAX_CLOSE
-#line 819 "robot.ypp"
+#line 822 "robot.ypp"
     {
         for (auto& arg : yystack_[1].value.as < std::vector<expr_ptr> > ()){
             if (arg->value_type_ != ExprNode::TYPE_INT){
@@ -1986,11 +1988,11 @@ namespace  yy  {
         ma->value_type_ = ExprNode::TYPE_INT;
         yylhs.value.as < expr_ptr > () = ma;
     }
-#line 1990 "generated/robot.tab.cpp"
+#line 1992 "generated/robot.tab.cpp"
     break;
 
   case 69: // expr: TOKEN_MIN_OPEN opt_expr_list TOKEN_MIN_CLOSE
-#line 832 "robot.ypp"
+#line 835 "robot.ypp"
     {
         for (auto& arg : yystack_[1].value.as < std::vector<expr_ptr> > ()){
             if (arg->value_type_ != ExprNode::TYPE_INT){
@@ -2003,87 +2005,87 @@ namespace  yy  {
         mi->value_type_ = ExprNode::TYPE_INT;
         yylhs.value.as < expr_ptr > () = mi;
     }
-#line 2007 "generated/robot.tab.cpp"
+#line 2009 "generated/robot.tab.cpp"
     break;
 
   case 70: // expr: TOKEN_SENDDRONS_OPEN expr TOKEN_SENDDRONS_CLOSE
-#line 845 "robot.ypp"
+#line 848 "robot.ypp"
     {
         auto drons = std::make_shared<ExprNode>(ExprNode::SENDDRONS);
         drons->args_.push_back(yystack_[1].value.as < expr_ptr > ());
         drons->value_type_ = ExprNode::TYPE_CELL;
         yylhs.value.as < expr_ptr > () = drons;
     }
-#line 2018 "generated/robot.tab.cpp"
+#line 2020 "generated/robot.tab.cpp"
     break;
 
   case 71: // opt_expr_list: %empty
-#line 855 "robot.ypp"
+#line 858 "robot.ypp"
     {
         yylhs.value.as < std::vector<expr_ptr> > () = std::vector<expr_ptr>();
     }
-#line 2026 "generated/robot.tab.cpp"
+#line 2028 "generated/robot.tab.cpp"
     break;
 
   case 72: // opt_expr_list: expr_list
-#line 859 "robot.ypp"
+#line 862 "robot.ypp"
     {
         yylhs.value.as < std::vector<expr_ptr> > () = yystack_[0].value.as < std::vector<expr_ptr> > ();
     }
-#line 2034 "generated/robot.tab.cpp"
+#line 2036 "generated/robot.tab.cpp"
     break;
 
   case 73: // expr_list: expr
-#line 866 "robot.ypp"
+#line 869 "robot.ypp"
     {
         yylhs.value.as < std::vector<expr_ptr> > ().push_back(yystack_[0].value.as < expr_ptr > ());
     }
-#line 2042 "generated/robot.tab.cpp"
+#line 2044 "generated/robot.tab.cpp"
     break;
 
   case 74: // expr_list: expr_list expr
-#line 870 "robot.ypp"
+#line 873 "robot.ypp"
     {
         yystack_[1].value.as < std::vector<expr_ptr> > ().push_back(yystack_[0].value.as < expr_ptr > ());
         yylhs.value.as < std::vector<expr_ptr> > () = yystack_[1].value.as < std::vector<expr_ptr> > ();
     }
-#line 2051 "generated/robot.tab.cpp"
+#line 2053 "generated/robot.tab.cpp"
     break;
 
   case 75: // primary_expr: TOKEN_INT_LIT
-#line 878 "robot.ypp"
+#line 881 "robot.ypp"
     {
         yylhs.value.as < expr_ptr > () = ExprNode::make_int(yystack_[0].value.as < int > ());
     }
-#line 2059 "generated/robot.tab.cpp"
+#line 2061 "generated/robot.tab.cpp"
     break;
 
   case 76: // primary_expr: TOKEN_BOOL_LIT
-#line 882 "robot.ypp"
+#line 885 "robot.ypp"
     {
         yylhs.value.as < expr_ptr > () = ExprNode::make_bool(yystack_[0].value.as < bool > ());
     }
-#line 2067 "generated/robot.tab.cpp"
+#line 2069 "generated/robot.tab.cpp"
     break;
 
   case 77: // primary_expr: TOKEN_CELL_VALUE
-#line 886 "robot.ypp"
+#line 889 "robot.ypp"
     {
         yylhs.value.as < expr_ptr > () = ExprNode::make_cell(yystack_[0].value.as < CellValue > ());
     }
-#line 2075 "generated/robot.tab.cpp"
+#line 2077 "generated/robot.tab.cpp"
     break;
 
   case 78: // primary_expr: var_ref
-#line 890 "robot.ypp"
+#line 893 "robot.ypp"
     {
         yylhs.value.as < expr_ptr > () = yystack_[0].value.as < expr_ptr > ();
     }
-#line 2083 "generated/robot.tab.cpp"
+#line 2085 "generated/robot.tab.cpp"
     break;
 
   case 79: // var_ref: TOKEN_IDENTIFIER
-#line 904 "robot.ypp"
+#line 907 "robot.ypp"
     {
         auto* sym = find_variable_in_scopes(yystack_[0].value.as < std::string > ());
         if (!sym){
@@ -2092,28 +2094,28 @@ namespace  yy  {
 
         auto iden = ExprNode::make_var_ref(yystack_[0].value.as < std::string > ());
         if (sym) {
-                    switch (sym->decl_.type_) {
-                        case VarDecl::INT:
-                            iden->value_type_ = ExprNode::TYPE_INT;
-                            break;
-                        case VarDecl::BOOL:
-                            iden->value_type_ = ExprNode::TYPE_BOOL;
-                            break;
-                        case VarDecl::CELL:
-                            iden->value_type_ = ExprNode::TYPE_CELL;
-                            break;
-                        default: iden->value_type_ = ExprNode::TYPE_UNKNOWN;
-                    }
-                }
+            switch (sym->decl_.type_) {
+                case VarDecl::INT:
+                    iden->value_type_ = ExprNode::TYPE_INT;
+                    break;
+                case VarDecl::BOOL:
+                    iden->value_type_ = ExprNode::TYPE_BOOL;
+                    break;
+                case VarDecl::CELL:
+                    iden->value_type_ = ExprNode::TYPE_CELL;
+                    break;
+                default: iden->value_type_ = ExprNode::TYPE_UNKNOWN;
+            }
+        }
 
-                yylhs.value.as < expr_ptr > () = iden;
+        yylhs.value.as < expr_ptr > () = iden;
 
     }
-#line 2113 "generated/robot.tab.cpp"
+#line 2115 "generated/robot.tab.cpp"
     break;
 
   case 80: // var_ref: TOKEN_IDENTIFIER dim_ref_list
-#line 930 "robot.ypp"
+#line 933 "robot.ypp"
     {
         auto* sym = find_variable_in_scopes(yystack_[1].value.as < std::string > ());
         if (!sym){
@@ -2149,29 +2151,29 @@ namespace  yy  {
         }
         yylhs.value.as < expr_ptr > () = iden;
     }
-#line 2153 "generated/robot.tab.cpp"
+#line 2155 "generated/robot.tab.cpp"
     break;
 
   case 81: // dim_ref_list: TOKEN_DIM_OPEN TOKEN_INDEX_OPEN expr TOKEN_INDEX_CLOSE TOKEN_DIM_CLOSE
-#line 969 "robot.ypp"
+#line 972 "robot.ypp"
     {
         yylhs.value.as < std::vector<expr_ptr> > () = std::vector<expr_ptr>();
         yylhs.value.as < std::vector<expr_ptr> > ().push_back(yystack_[2].value.as < expr_ptr > ());
     }
-#line 2162 "generated/robot.tab.cpp"
+#line 2164 "generated/robot.tab.cpp"
     break;
 
   case 82: // dim_ref_list: dim_ref_list TOKEN_DIM_OPEN TOKEN_INDEX_OPEN expr TOKEN_INDEX_CLOSE TOKEN_DIM_CLOSE
-#line 974 "robot.ypp"
+#line 977 "robot.ypp"
     {
         yystack_[5].value.as < std::vector<expr_ptr> > ().push_back(yystack_[2].value.as < expr_ptr > ());
         yylhs.value.as < std::vector<expr_ptr> > () = yystack_[5].value.as < std::vector<expr_ptr> > ();
     }
-#line 2171 "generated/robot.tab.cpp"
+#line 2173 "generated/robot.tab.cpp"
     break;
 
 
-#line 2175 "generated/robot.tab.cpp"
+#line 2177 "generated/robot.tab.cpp"
 
             default:
               break;
@@ -2780,13 +2782,13 @@ namespace  yy  {
   {
        0,   209,   209,   227,   228,   229,   238,   247,   263,   267,
      289,   306,   310,   317,   321,   325,   332,   336,   349,   353,
-     361,   365,   372,   376,   396,   405,   417,   427,   428,   433,
-     443,   444,   445,   446,   447,   448,   449,   450,   451,   452,
-     457,   477,   492,   526,   530,   548,   583,   592,   596,   604,
-     626,   633,   640,   647,   660,   676,   685,   694,   708,   712,
-     716,   729,   742,   754,   768,   781,   794,   805,   818,   831,
-     844,   854,   858,   865,   869,   877,   881,   885,   889,   903,
-     929,   968,   973
+     361,   365,   372,   376,   396,   405,   417,   427,   431,   436,
+     446,   447,   448,   449,   450,   451,   452,   453,   454,   455,
+     460,   480,   495,   529,   533,   551,   586,   595,   599,   607,
+     629,   636,   643,   650,   663,   679,   687,   696,   711,   715,
+     719,   732,   745,   757,   771,   784,   797,   808,   821,   834,
+     847,   857,   861,   868,   872,   880,   884,   888,   892,   906,
+     932,   971,   976
   };
 
   void
@@ -2874,9 +2876,9 @@ namespace  yy  {
 
 #line 91 "robot.ypp"
 } //  yy 
-#line 2878 "generated/robot.tab.cpp"
+#line 2880 "generated/robot.tab.cpp"
 
-#line 980 "robot.ypp"
+#line 983 "robot.ypp"
 
 
 void yy::RobotParser::error(const location_type& loc, const std::string& msg) {

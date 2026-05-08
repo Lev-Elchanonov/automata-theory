@@ -1877,17 +1877,5 @@
                 <CALL>move_cycle</CALL>
             </DO>
         </WHILE>
-        <WHILE>
-            <CHECK>
-                <EQ>
-                    <VALUE>drones_left</VALUE>
-                    <VALUE>0</VALUE>
-                </EQ>
-            </CHECK>
-            <DO>
-                <UP>1</UP>
-            </DO>
-        </WHILE>
-
     </FUNC>
 </PROGRAM>

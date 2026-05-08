@@ -662,10 +662,10 @@ private:
     }
 
 public:
-    explicit Interpreter(FILE* go_stdin = nullptr)
+    explicit Interpreter(FILE* go_stdin = nullptr, const std::string& map_file = "map.txt")
         : go_stdin_(go_stdin), rng(std::random_device{}()) {
 
-        load_field("map.txt");
+        load_field(map_file);
 
         json field_json = json::array();
         for (int y = 0; y < FIELD_HEIGHT_; y++) {
