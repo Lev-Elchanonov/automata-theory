@@ -452,8 +452,6 @@ namespace  yy  {
       // move_stmt
       // call_stmt
       // getdrons_stmt
-      // get_x_stmt
-      // get_y_stmt
       char dummy15[sizeof (stmt_ptr)];
     };
 
@@ -729,14 +727,12 @@ namespace  yy  {
         S_move_stmt = 116,                       // move_stmt
         S_call_stmt = 117,                       // call_stmt
         S_getdrons_stmt = 118,                   // getdrons_stmt
-        S_get_x_stmt = 119,                      // get_x_stmt
-        S_get_y_stmt = 120,                      // get_y_stmt
-        S_expr = 121,                            // expr
-        S_opt_expr_list = 122,                   // opt_expr_list
-        S_expr_list = 123,                       // expr_list
-        S_primary_expr = 124,                    // primary_expr
-        S_var_ref = 125,                         // var_ref
-        S_dim_ref_list = 126                     // dim_ref_list
+        S_expr = 119,                            // expr
+        S_opt_expr_list = 120,                   // opt_expr_list
+        S_expr_list = 121,                       // expr_list
+        S_primary_expr = 122,                    // primary_expr
+        S_var_ref = 123,                         // var_ref
+        S_dim_ref_list = 124                     // dim_ref_list
       };
     };
 
@@ -851,8 +847,6 @@ namespace  yy  {
       case symbol_kind::S_move_stmt: // move_stmt
       case symbol_kind::S_call_stmt: // call_stmt
       case symbol_kind::S_getdrons_stmt: // getdrons_stmt
-      case symbol_kind::S_get_x_stmt: // get_x_stmt
-      case symbol_kind::S_get_y_stmt: // get_y_stmt
         value.move< stmt_ptr > (std::move (that.value));
         break;
 
@@ -1191,8 +1185,6 @@ switch (yykind)
       case symbol_kind::S_move_stmt: // move_stmt
       case symbol_kind::S_call_stmt: // call_stmt
       case symbol_kind::S_getdrons_stmt: // getdrons_stmt
-      case symbol_kind::S_get_x_stmt: // get_x_stmt
-      case symbol_kind::S_get_y_stmt: // get_y_stmt
         value.template destroy< stmt_ptr > ();
         break;
 
@@ -2789,7 +2781,7 @@ switch (yykind)
     /// \param yyvalue   the value to check
     static bool yy_table_value_is_error_ (int yyvalue) YY_NOEXCEPT;
 
-    static const short yypact_ninf_;
+    static const signed char yypact_ninf_;
     static const signed char yytable_ninf_;
 
     /// Convert a scanner token kind \a t to a symbol kind.
@@ -3067,8 +3059,8 @@ switch (yykind)
     /// Constants.
     enum
     {
-      yylast_ = 342,     ///< Last index in yytable_.
-      yynnts_ = 35,  ///< Number of nonterminal symbols.
+      yylast_ = 335,     ///< Last index in yytable_.
+      yynnts_ = 33,  ///< Number of nonterminal symbols.
       yyfinal_ = 4 ///< Termination state number.
     };
 
@@ -3081,7 +3073,7 @@ switch (yykind)
 
 #line 91 "robot.ypp"
 } //  yy 
-#line 3085 "generated/robot.tab.hpp"
+#line 3077 "generated/robot.tab.hpp"
 
 
 // "%code provides" blocks.
@@ -3090,7 +3082,7 @@ switch (yykind)
     void yyerror(const std::string& msg);
     extern yy::RobotLexer* THE_LEXER;
 
-#line 3094 "generated/robot.tab.hpp"
+#line 3086 "generated/robot.tab.hpp"
 
 
 #endif // !YY_YY_GENERATED_ROBOT_TAB_HPP_INCLUDED

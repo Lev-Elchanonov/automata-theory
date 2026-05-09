@@ -13,7 +13,7 @@ int main(int argc, char* argv[]) {
     }
 
     std::string input_file = argv[1];
-    std::string map_file = "map.txt";
+    std::string map_file = "maps/common.txt";
     std::string go_visualizer;
     FILE* go_pipe = nullptr;
 

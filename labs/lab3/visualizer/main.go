@@ -344,7 +344,7 @@ func readInput() {
 
 
 		if cmd.Command != "init" && cmd.Command != "exit" {
-			time.Sleep(300 * time.Millisecond)
+			time.Sleep(150 * time.Millisecond)
 		}
 	}
 }

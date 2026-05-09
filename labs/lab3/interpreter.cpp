@@ -294,8 +294,8 @@ private:
             num_drones = drone_count_;
         }
 
-        std::uniform_int_distribution<int> dir_dist(0, 3);  // рандомная дистанция
-        std::uniform_int_distribution<int> step_dist(3, 5); // рандомное количество шагов
+        std::uniform_int_distribution<int> dir_dist(0, 3);
+        std::uniform_int_distribution<int> step_dist(3, 5);
 
         std::vector<json> drone_paths;
 
@@ -310,27 +310,25 @@ private:
                 int nx = dr_x, ny = dr_y;
 
                 switch (dir) {
-                    case 0:
-                        nx--;
-                        break;
-                    case 1:
-                        nx++;
-                        break;
-                    case 2:
-                        ny--;
-                        break;
-                    case 3:
-                        ny++;
-                        break;
-                    default:
-                        break;
+                    case 0: nx--; break;
+                    case 1: nx++; break;
+                    case 2: ny--; break;
+                    case 3: ny++; break;
+                    default: break;
                 }
 
-                if (nx >= 0 && nx < FIELD_WIDTH_ && ny >= 0 && ny < FIELD_HEIGHT_) {
-                    dr_x = nx;
-                    dr_y = ny;
-                    path.emplace_back(dr_x, dr_y);
+                if (nx < 0 || nx >= FIELD_WIDTH_ || ny < 0 || ny >= FIELD_HEIGHT_) {
+                    continue;
                 }
+
+                if (field_[ny][nx] == 1) {
+                    path.emplace_back(nx, ny);
+                    continue;
+                }
+
+                dr_x = nx;
+                dr_y = ny;
+                path.emplace_back(dr_x, dr_y);
             }
 
             json drone_path = json::array();
@@ -352,21 +350,38 @@ private:
             {"paths", drone_paths}
         });
 
+        const int scan_radius = 5;
+        const int scan_size = scan_radius * 2 + 1;
 
-        std::vector<int> scan(FIELD_WIDTH_ * FIELD_HEIGHT_, static_cast<int>(CellValue::UNDEF));
+        std::vector<int> scan(scan_size * scan_size, static_cast<int>(CellValue::UNDEF));
+
+        const int center_x = scan_radius;
+        const int center_y = scan_radius;
 
         for (auto& drone_path : drone_paths) {
             for (auto& p : drone_path) {
-                int x = p["x"];
-                int y = p["y"];
-                scan[y * FIELD_WIDTH_ + x] = field_[y][x];
+                int real_x = p["x"];
+                int real_y = p["y"];
+
+                int rel_x = real_x - robot_x_;
+                int rel_y = real_y - robot_y_;
+
+                int scan_x = center_x + rel_x;
+                int scan_y = center_y + rel_y;
+
+
+                if (scan_x >= 0 && scan_x < scan_size && scan_y >= 0 && scan_y < scan_size) {
+                    scan[scan_y * scan_size + scan_x] = field_[real_y][real_x];
+                }
             }
         }
+
+        scan[center_y * scan_size + center_x] = static_cast<int>(CellValue::EMPTY);
 
         Value result;
         result.type_ = Value::ARRAY;
         result.array_val_ = scan;
-        result.dims_ = {FIELD_HEIGHT_, FIELD_WIDTH_};
+        result.dims_ = {scan_size, scan_size};
 
         return result;
     }
@@ -509,14 +524,6 @@ private:
                 scopes_.back()[decl.name_] = info;
             }
             break;
-
-        case StmtNode::GETX:
-            execute_getx(stmt);
-            break;
-
-        case StmtNode::GETY:
-            execute_gety(stmt);
-            break;
         }
     }
 
@@ -640,29 +647,9 @@ private:
         });
     }
 
-    void execute_getx(const stmt_ptr& stmt) {
-        Value v;
-        v.type_ = Value::INT;
-        v.int_val_ = robot_x_;
-        assign_value(stmt->x_, v);
-        send_to_go({
-            {"command", "x_position_queried"},
-            {"x", robot_x_}
-        });
-    }
-    void execute_gety(const stmt_ptr& stmt) {
-        Value v;
-        v.type_ = Value::INT;
-        v.int_val_ = robot_y_;
-        assign_value(stmt->y_, v);
-        send_to_go({
-            {"command", "y_position_queried"},
-            {"y", robot_y_}
-        });
-    }
 
 public:
-    explicit Interpreter(FILE* go_stdin = nullptr, const std::string& map_file = "map.txt")
+    explicit Interpreter(FILE* go_stdin = nullptr, const std::string& map_file = "maps/common.txt")
         : go_stdin_(go_stdin), rng(std::random_device{}()) {
 
         load_field(map_file);

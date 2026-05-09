@@ -104,8 +104,6 @@ struct StmtNode {
         MOVE,
         CALL,
         GETDRONSCOUNT,
-        GETX,
-        GETY,
         EXPR,
         VARDECL
     };

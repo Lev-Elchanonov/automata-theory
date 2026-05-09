@@ -192,7 +192,7 @@
 
 %type <std::vector<expr_ptr>> expr_list opt_expr_list var_ref_list dim_ref_list // (expr_list - список выражений (аргументы для ADD и тд). Может быть опционален или состоять из ссылок)
 
-%type <stmt_ptr> expr_stmt stmt assign_stmt while_stmt switch_stmt move_stmt call_stmt getdrons_stmt vardecl_stmt get_x_stmt get_y_stmt// (указатель на узел любой инструкции)
+%type <stmt_ptr> expr_stmt stmt assign_stmt while_stmt switch_stmt move_stmt call_stmt getdrons_stmt vardecl_stmt // (указатель на узел любой инструкции)
 
 %type <std::vector<stmt_ptr>> stmt_list // список инструкций
 
@@ -451,8 +451,6 @@ stmt:
     | getdrons_stmt { $$ = $1; }
     | expr_stmt { $$ = $1; }
     | vardecl_stmt { $$ = $1; }
-    | get_x_stmt { $$ = $1; }
-    | get_y_stmt { $$ = $1; }
 ;
 
 
@@ -680,23 +678,6 @@ getdrons_stmt:
     {
         auto st = std::make_shared<StmtNode>(StmtNode::GETDRONSCOUNT);
         st->dron_target_ = $2;
-        $$ = st;
-    }
-;
-get_x_stmt:
-    TOKEN_GETX_OPEN var_ref TOKEN_GETX_CLOSE
-    {
-        auto st = std::make_shared<StmtNode>(StmtNode::GETX);
-        st->x_ = $2;
-        $$ = st;
-    }
-;
-
-get_y_stmt:
-    TOKEN_GETY_OPEN var_ref TOKEN_GETY_CLOSE
-    {
-        auto st = std::make_shared<StmtNode>(StmtNode::GETY);
-        st->y_ = $2;
         $$ = st;
     }
 ;
